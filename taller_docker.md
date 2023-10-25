@@ -378,7 +378,22 @@ Cuando accedemos a una imagen de Docker Hub, obtenemos por regla general la sigu
 - **Información sobre la imagen**, que suele incluir (especialmente en las imágenes oficiales) una guía sobre cómo utilizar la imagen, si es necesario definir parámetros (como contraseñas, puertos,...) y otra información de interés.
 - **Tags o etiquetas**, que se emplean para diferenciar las versiones que se van publicando. De todas las etiquetas disponibles, destacamos la etiqueta ```latest```, que hace alusión a la última versión publicada de la imagen
 
+##### Acceder a Docker Hub desde terminal
+En muchas ocasiones será necesario que estemos logueados en Docker Hub para poder importar una imagen que queramos usar para nuestro contenedor. Esto se hace a través del comando ```docker login```:
+```bash
+eth3rup@debian:~$ docker login
+Log in with your Docker ID or email address to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com/ to create one.
+You can log in with your password or a Personal Access Token (PAT). Using a limited-scope PAT grants better security and is required for organizations using SSO. Learn more at https://docs.docker.com/go/access-tokens/
 
+Username: eth3rup
+Password: 
+WARNING! Your password will be stored unencrypted in /home/eth3rup/.docker/config.json.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/engine/reference/commandline/login/#credentials-store
+
+Login Succeeded
+
+```
 
 Gestion de contenedores
 ===============================================================================================================================
@@ -614,10 +629,102 @@ ab0b901e7e27   nginx     "/docker-entrypoint.…"   17 minutes ago   Up 9 second
 ```docker container stop `docker container list -qa` ```
 La opción ```-qa``` devuelve los ID de todos los contenedores (parados y en ejecución) y cuando Docker vaya a lanzarlos, **los contenedores que ya estén en ejecución los obviará**.
 
-#### Ejecutar un comando en un contenedor
-Texto.
+#### Eliminar un contenedor
+Cuando llegue el momento en el que un contenedor ya no me resulte útil o no me interese, puedo eliminarlo de mi Docker Engine. Esto se hace con el comando ```docker container rm```, que tiene la siguiente sintaxis:
+
+```docker container rm [OPCIONES] CONTENEDOR [CONTENEDOR...]```
+
+Como en los casos anteriores, podremos detener uno o varios contenedores a la vez usando el ID o su nombre, indistintamente.
+
+Si procedemos a eliminar un contenedor en ejecución (por ejemplo, _web2_) obtendremos lo siguiente:
+
+```bash
+eth3rup@debian:~$ docker container rm web2
+Error response from daemon: You cannot remove a running container ff089f6486f2468e71abae88f629fb8e5fcd0f310f5bcd6dfa23acf4dabf8922. Stop the container before attempting removal or force remove
+```
+
+Así pues, tendremos dos opciones:
+a) Parar el contenedor y después eliminarlo
+```bash
+eth3rup@debian:~$ docker container stop web2
+web2
+eth3rup@debian:~$ docker container rm web2
+web2
+```
+
+b) Forzar la eliminación del contenedor, aún cuando se encuentre en ejecución.
+```bash
+eth3rup@debian:~$ docker container rm -f web2
+web2
+```
+
+Más adelante veremos que se pueden asociar volúmenes a un contenedor. De esta manera, en el caso de que se quieran almacenar datos de forma persistente y ajena al contenedor, se puede hacer con total independencia. Sin embargo, cuando eliminamos el contenedor, si no establecemos lo contrario, los volúmenes, al ser persistentes, no se eliminan.
+
+En el caso de que se quieran eliminar volúmenes asociados al contenedor cuando queramos eliminar el contenedor, haremos uso de la opción ```-v```.
+
+> **⚠️ Importante**
+> Los volúmenes sólo se podrán eliminar si no están asociados a otro contenedor.
+
+
 #### Mover información
-Texto.
+En ocasiones puede ser necesario mover información (archivos) desde nuestro equipo al contenedor o viceversa. Para ello haremos uso del comando ```docker container cp```, que tiene la siguiente sintaxis.
+
+```docker container cp [OPCIONES] RUTA_ORIGEN RUTA_DESTINO```
+
+El movimiento de información se puede hacer desde o hacia el contenedor. Hay que tener en cuenta que para referenciar la ruta del contenedor se utilizará el formato ```NOMBRE_CONTENEDOR:RUTA_EN_CONTENEDOR```
+
+Por ejemplo, si tenemos un contenedor en ejecución llamado _web3_ al que le hemos cargado una imagen de _Apache_ (imagen _httpd_) y queremos recuperar el archivo _index.html_ original, utilizaríamos la siguiente orden:
+
+```bash
+eth3rup@debian:~$ docker container cp web2:/usr/local/apache2/htdocs/index.html .
+Successfully copied 2.05kB to /home/eth3rup/.
+```
+
+Del mismo modo, si quisiéramos colocar una nueva versión de ese archivo en el contenedor, la orden sería esta:
+
+```bash
+eth3rup@debian:~$ docker container cp index.html web3:/usr/local/apache2/htdocs/
+Successfully copied 2.05kB to web3:/usr/local/apache2/htdocs/
+```
+
+...y, en efecto, si accedemos a localhost comprobamos que el archivo está actualizado.
+
+[![img02-apache.png](https://i.postimg.cc/zDMdJSn9/img02-apache.png)](https://postimg.cc/s1YPmWHc)
+
+#### Ejecutar un comando en un contenedor
+Es posible ejecutar un comando en un contenedor a través de la orden ```docker container exec```, que tiene la siguiente sintaxis:
+
+```docker container exec [OPCIONES] CONTENEDOR COMANDO [ARGUMENTOS]```
+
+Un ejemplo muy simple sería lanzar la orden ```ls```
+
+Como se ve, la salida muestra el mismo resultado que si hubiera ejecutado ls en el terminal de ese "equipo".
+
+```bash
+eth3rup@debian:~$ docker container exec web3 ls
+bin
+build
+cgi-bin
+conf
+error
+htdocs
+icons
+include
+logs
+modules
+```
+
+Si quisiéramos realizar más operaciones sobre el contenedor, lo realmente útil es lanzar una consola interactiva:
+
+```bash
+eth3rup@debian:~$ docker container exec -it web3 /bin/bash
+root@88c3ddffc5da:/usr/local/apache2# ls
+bin  build  cgi-bin  conf  error  htdocs  icons  include  logs	modules
+root@88c3ddffc5da:/usr/local/apache2# 
+```
+
+Esto permite acceder al contenedor y lanzar una consola, de forma que las órdenes que ejecutemos serán en su interior.
+Para salir de la consola simplemente usamos la orden ```exit```
 
 Gestión de imágenes
 ===============================================================================================================================
@@ -626,5 +733,8 @@ Texto.
 Para cre
 #### Exportar imágenes a Docker Hub
 Para cre
+#### Listar imágenes en Docker
+Para cre
+
 #### Listar imágenes en Docker
 Para cre

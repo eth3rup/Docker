@@ -453,6 +453,31 @@ Señala los puertos que expone el contenedor y cómo están mapeados.
 * NAMES
 Es el nombre que se le asigna al contenedor. Por defecto, si no se establece lo contrario a la hora de crear el contenedor (con el parámetro ```--name nombre_contenedor```), Docker le asigna un nombre "aleatorio"
 
+A continuación vamos a crear otro contenedor de _nginx_ al que vamos a asignar como nombre _web2_:
+
+```bash
+eth3rup@debian:~$ docker run --name web2 -d nginx
+ff089f6486f2468e71abae88f629fb8e5fcd0f310f5bcd6dfa23acf4dabf8922
+eth3rup@debian:~$ docker container list
+CONTAINER ID   IMAGE     COMMAND                  CREATED              STATUS              PORTS                               NAMES
+ff089f6486f2   nginx     "/docker-entrypoint.…"   About a minute ago   Up About a minute   80/tcp                              web2
+ab0b901e7e27   nginx     "/docker-entrypoint.…"   10 minutes ago          Up 10 minutes       0.0.0.0:80->80/tcp, :::80->80/tcp   wizardly_bhabha
+```
+
+Advertimos que en el proceso de creación, como Docker Engine ya tiene la imagen, no necesita ir a buscarla a Docker Hub, de modo que la operación es casi instantánea y sólo nos devuelve el ID.
+
+> **⚠ Importante:**
+> La orden ```docker container list``` realmente muestra la relación de contenedores en ejecución. Si queremos tener la lista de todos los contenedores (en ejecución y parados) habrá que ejecutar la orden ```docker container list -a ```.
+
+Una opción muy interesante de ```docker container list``` es la de listar sólo los ID de los contenedores. Esta información nos será después muy util para realizar operaciones "masivas" con ellos.
+Esto se consigue con la opción ```-q```, como se puede ver a continuación:
+
+```bash
+eth3rup@debian:~$ docker container list -q
+ff089f6486f2
+ab0b901e7e27
+```
+
 #### Mostrar información del contenedor
 Si queremos tener más información de un contenedor de la que nos arroja el comando ```docker container list```, podemos utilizar el comando ```docker container inspect``` con la siguiente sintaxis:
 
@@ -462,16 +487,133 @@ En realidad, como se aprecia en la sintaxis, es posible consultar información d
 
 Para referenciar a los contenedores se puede utilizar su ID o su nombre, indistintamente.
 
-En nuestro caso, la ejecución del comando produciría la siguiente salida:
+En nuestro caso, la ejecución del comando produciría la siguiente salida en formato JSON:
 ```bash
-eth3rup@debian:~$ docker container list
-CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS       PORTS                               NAMES
-ab0b901e7e27   nginx     "/docker-entrypoint.…"   36 seconds ago   Up 35 seconds   0.0.0.0:80->80/tcp, :::80->80/tcp   wizardly_bhabha
+eth3rup@debian:~$ docker container inspect ab0b901e7e27
+[
+    {
+        "Id": "ab0b901e7e2700265cb848b4c5b8972e39fbe3c42ae3e0afe5f683f64cb0496d",
+        "Created": "2023-10-25T15:30:45.666585423Z",
+        "Path": "/docker-entrypoint.sh",
+        "Args": [
+            "nginx",
+            "-g",
+            "daemon off;"
+        ],
+        "State": {
+            "Status": "running",
+            "Running": true,
+            "Paused": false,
+            "Restarting": false,
+            "OOMKilled": false,
+            "Dead": false,
+            "Pid": 2322,
+            "ExitCode": 0,
+            "Error": "",
+            "StartedAt": "2023-10-25T15:30:48.206118096Z",
+            "FinishedAt": "0001-01-01T00:00:00Z"
+        },
+        "Image": "sha256:593aee2afb642798b83a85306d2625fd7f089c0a1242c7e75a237846d80aa2a0",
+        "ResolvConfPath": "/var/lib/docker/containers/ab0b901e7e2700265cb848b4c5b8972e39fbe3c42ae3e0afe5f683f64cb0496d/resolv.conf",
+        "HostnamePath": "/var/lib/docker/containers/ab0b901e7e2700265cb848b4c5b8972e39fbe3c42ae3e0afe5f683f64cb0496d/hostname",
+        "HostsPath": "/var/lib/docker/containers/ab0b901e7e2700265cb848b4c5b8972e39fbe3c42ae3e0afe5f683f64cb0496d/hosts",
+        "LogPath": "/var/lib/docker/containers/ab0b901e7e2700265cb848b4c5b8972e39fbe3c42ae3e0afe5f683f64cb0496d/ab0b901e7e2700265cb848b4c5b8972e39fbe3c42ae3e0afe5f683f64cb0496d-json.log",
+        "Name": "/wizardly_bhabha",
+        "RestartCount": 0,
+        "Driver": "overlay2",
+        "Platform": "linux",
+        "MountLabel": "",
+        "ProcessLabel": "",
+        "AppArmorProfile": "docker-default",
+        "ExecIDs": null,
+        "HostConfig": {
+            "Binds": null,
+            "ContainerIDFile": "",
+            "LogConfig": {
+                "Type": "json-file",
+                "Config": {}
+            },
+            "NetworkMode": "default",
+            "PortBindings": {
+                "80/tcp": [
+                    {
+                        "HostIp": "",
+                        "HostPort": "80"
+                    }
+                ]
+            },
+...
 
 ```
 
+Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-p``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos conocer la IP que tiene el contenedor en la red de Docker (hablaremos de ella más adelante), usaríamos la expresión ```-f '{{.NetworkSettings.IPAddress}}```:
 
-, Texto.
+```bash
+eth3rup@debian:~$ docker container inspect -f '{{.NetworkSettings.IPAddress}} ab0b901e7e27
+172.17.0.2
+```
+
+#### Detener un contenedor
+Cuando no queramos hacer uso del contenedor, podemos detener su ejecución con el comando ```docker container stop```, que tiene la siguiente sintaxis:
+
+```docker container stop [OPCIONES] CONTENEDOR [CONTENEDOR...]```
+
+Como en el caso de ```docker container inspect```, aquí también podremos detener uno o varios contenedores a la vez y, para referenciar a los contenedores, se puede utilizar su ID o su nombre, indistintamente.
+
+En nuestro caso, si quisiéramos parar el contenedor que tenemos actualmente en ejecución, lanzaríamos la siguiente orden:
+
+```bash
+eth3rup@debian:~$ docker container stop ab0b901e7e27
+ab0b901e7e27
+```
+
+Como podemos observar, la salida que nos da ese comando es el ID del contenedor.
+
+Si ahora listamos de nuevo los contenedores (con el parámetro ```-a``` para ver los que no están en ejecución) obtenemos el siguiente resultado:
+
+```bash
+eth3rup@debian:~$ docker container list -a
+CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS                     PORTS     NAMES
+ff089f6486f2   nginx     "/docker-entrypoint.…"   7 minutes ago   Up 6 minutes               80/tcp    web2
+ab0b901e7e27   nginx     "/docker-entrypoint.…"   17 minutes ago   Exited (0) 25 seconds ago             wizardly_bhabha
+
+```
+
+> **😎 Truco**
+> Para detener todos los contenedores que hay en ejecución utilizando una única orden, vamos a recurrir a la salida del comando ```docker container list -q``` y combinarla de la siguiente manera:
+```docker container stop `docker container list -q` ```
+
+
+#### Ejecutar un contenedor
+Si queremos lanzar un contenedor que tenemos parado, debemos hacer uso del comando ```docker container start```, que tiene la siguiente sintaxis:
+
+```docker container start [OPCIONES] CONTENEDOR [CONTENEDOR...]```
+
+De nuevo, y como en el caso de ```docker container start```, aquí también podremos iniciar uno o varios contenedores a la vez y, para referenciar a los contenedores, se puede utilizar su ID o su nombre, indistintamente.
+
+En nuestro caso, si quisiéramos volver a lanzar el contenedor que habíamos detenido, lanzaríamos la siguiente orden:
+
+```bash
+eth3rup@debian:~$ docker container start ab0b901e7e27
+ab0b901e7e27
+```
+La salida que nos da ese comando es, de nuevo, el ID del contenedor.
+
+Si ahora vuelvo a consultar el listado de contenedores, obtenemos el siguiente resultado:
+
+```bash
+eth3rup@debian:~$ docker container list
+CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS                     PORTS     NAMES
+ff089f6486f2   nginx     "/docker-entrypoint.…"   7 minutes ago   Up 6 minutes               80/tcp    web2
+ab0b901e7e27   nginx     "/docker-entrypoint.…"   17 minutes ago   Up 9 seconds             wizardly_bhabha
+
+```
+
+> **😎 Truco**
+> Para lanzar todos los contenedores que hay parados utilizando una única orden, vamos a recurrir a la salida del comando ```docker container list -qa``` y combinarla de la siguiente manera:
+```docker container stop `docker container list -qa` ```
+La opción ```-qa``` devuelve los ID de todos los contenedores (parados y en ejecución) y cuando Docker vaya a lanzarlos, **los contenedores que ya estén en ejecución los obviará**.
+
 #### Ejecutar un comando en un contenedor
 Texto.
 #### Mover información

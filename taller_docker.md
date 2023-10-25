@@ -420,14 +420,58 @@ La descarga de la imagen se hace por capas, en paralelo, como hablaremos más ad
 
 Una vez ha terminado la descarga, asigna un **ID al contenedor** que genera, que es la cadena hexadecimal que se muestra en la última línea.
 
-asaaaaaaa
+Si ahora abrimos el navegador y escribimos ```http://localhost:80```, veremos corriendo ```nginx```.
+
+[![img01-nginx.png](https://i.postimg.cc/8Pt841ZB/img01-nginx.png)](https://postimg.cc/8jJnPVQj)
 
 #### Listar contenedores
-Texto.
-#### Para y reanudar contenedores
-Texto.
+Para ver los contenedores que tengo en mi Docker Engine se utiliza la orden ```docker container list``` con la siguiente sintaxis:
+
+```docker container list [OPCIONES]```
+
+En nuestro caso, la ejecución del comando produciría la siguiente salida:
+```bash
+eth3rup@debian:~$ docker container list
+CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS       PORTS                               NAMES
+ab0b901e7e27   nginx     "/docker-entrypoint.…"   36 seconds ago   Up 35 seconds   0.0.0.0:80->80/tcp, :::80->80/tcp   wizardly_bhabha
+
+```
+
+Vamos a ver el significado de los campos que se muestran...
+* CONTAINER ID
+Hace alusión al ID del contenedor. Como se puede comprobar, corresponde con el encabezado de la cadena hexadecimal que nos generó cuando lo creamos.
+* IMAGE
+Referencia la imagen que hemos utilizado para crear este contenedor.
+* COMMAND
+Indica el comando que se ha ejecutado para lanzar el contenedor.
+* CREATED
+Da información sobre el tiempo que hace que se creó el contenedor.
+* STATUS
+Da información sobre el estado del contenedor (en esencia, si está levantado o no) y cuánto tiempo lleva así.
+* PORTS
+Señala los puertos que expone el contenedor y cómo están mapeados.
+* NAMES
+Es el nombre que se le asigna al contenedor. Por defecto, si no se establece lo contrario a la hora de crear el contenedor (con el parámetro ```--name nombre_contenedor```), Docker le asigna un nombre "aleatorio"
+
 #### Mostrar información del contenedor
-Texto.
+Si queremos tener más información de un contenedor de la que nos arroja el comando ```docker container list```, podemos utilizar el comando ```docker container inspect``` con la siguiente sintaxis:
+
+```docker container inspect [OPCIONES] CONTENEDOR [CONTENEDOR...]```
+
+En realidad, como se aprecia en la sintaxis, es posible consultar información de uno o varios contenedores a la vez.
+
+Para referenciar a los contenedores se puede utilizar su ID o su nombre, indistintamente.
+
+En nuestro caso, la ejecución del comando produciría la siguiente salida:
+```bash
+eth3rup@debian:~$ docker container list
+CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS       PORTS                               NAMES
+ab0b901e7e27   nginx     "/docker-entrypoint.…"   36 seconds ago   Up 35 seconds   0.0.0.0:80->80/tcp, :::80->80/tcp   wizardly_bhabha
+
+```
+
+
+, Texto.
 #### Ejecutar un comando en un contenedor
 Texto.
 #### Mover información

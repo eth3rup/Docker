@@ -767,7 +767,7 @@ EXPOSE 80
 VOLUME /datos_miapp
 COPY . /miapp
 RUN pip install -r requisitos.txt
-ENTRYPOINT ["python"]
+ENTRYPOINT ["python3"]
 CMD ["miapp.py"]
 ```
 
@@ -779,9 +779,9 @@ Partimos de la imagen oficial de ubuntu en su última versión (``latest``). A p
 Se actualiza el repositorio del sistema y se instalan los paquetes que se van a necesitar de Python3.
 
 * ``WORKDIR /miapp``
-aa
-* ``ENV TEST=True``
-aa
+Establece el directorio de trabajo del contenedor.
+* ``ENV DEBUG=True``
+Fija la variable de entorno DEBUG y le asigna un valor. Esta variable irá al contexto del contenedor.
 * ``EXPOSE 80``
 aa
 * ``VOLUME /datos_miapp``

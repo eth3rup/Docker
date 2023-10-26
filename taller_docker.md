@@ -1,4 +1,4 @@
-# Taller de Dockerv
+# Taller de Docker
 
 ![Docker Image](https://i.postimg.cc/DfXJXcmg/it-works-on-my-machine.png)
 #### Introducción al uso de Docker
@@ -359,7 +359,7 @@ Aunque es posible tener repositorios privados, existe un repositorio (registro) 
 
 En Docker Hub existen, en general, dos tipos de imágenes:
 
-- **Imágenes privadas:** sólo están disponibles para el propietario.
+- **Imágenes privadas:** sólo están disponibles para el propietario. Para acceder a estas imágenes desde nuestro Docker necesitaremos estar logueados en Docker Hub (ver el apartado [Acceder a Docker Hub desde terminal](#acceder-a-docker-hub-desde-terminal) )
 - **Imágenes públicas:** están disponibles para todos los usuarios de Docker Hub.
    - **Imágenes oficiales de Docker:** forman parte de repositorios básicos esenciales que sirven como punto de partida para la mayoría de los usuarios. Estas imágenes están etiquetadas con la siguiente imagen:
    ![Docker Official Image](https://docs.docker.com/trusted-content/images/official-image-badge-iso.png)
@@ -379,7 +379,7 @@ Cuando accedemos a una imagen de Docker Hub, obtenemos por regla general la sigu
 - **Tags o etiquetas**, que se emplean para diferenciar las versiones que se van publicando. De todas las etiquetas disponibles, destacamos la etiqueta ```latest```, que hace alusión a la última versión publicada de la imagen
 
 ##### Acceder a Docker Hub desde terminal
-En muchas ocasiones será necesario que estemos logueados en Docker Hub para poder importar una imagen que queramos usar para nuestro contenedor. Esto se hace a través del comando ```docker login```:
+Cuando queramos acceder a imágenes privadas, será necesario que estemos logueados en Docker Hub para poder importarla a nuestro Docker Engine. Esto se hace a través del comando ```docker login```:
 ```bash
 eth3rup@debian:~$ docker login
 Log in with your Docker ID or email address to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com/ to create one.
@@ -568,6 +568,21 @@ eth3rup@debian:~$ docker container inspect -f '{{.NetworkSettings.IPAddress}} ab
 172.17.0.2
 ```
 
+#### Mostrar uso de recursos del contenedor
+Además de la información "estática" del contenedor, podemos obtener datos del uso de los recursos del contenedor sin necesidad de correr comandos en su interior. Para ello haremos uso del comando ```docker container stats```, que tiene la siguiente sintaxis:
+
+```docker container stats [OPCIONES] [CONTENEDOR...]```
+
+La salida de este comando nos dará una visualización en tiempo real del consumo de los principales recursos, de forma similar a cuando ejecutamos el comando top en nuestro terminal.
+Durante el tiempo que estemos visualizando esta información, la ventana no podrá utilizarse para otra cosa. Si queremos salir, ejecutaremos la combinación de teclas ```[Ctrl]+[C]```
+
+Para obtener una única "captura" de información, emplearemos la opción ```--no-stream```:
+```bash
+eth3rup@debian:~$ docker container stats --no-stream web2
+CONTAINER ID   NAME      CPU %     MEM USAGE / LIMIT     MEM %     NET I/O           BLOCK I/O         PIDS
+ff089f6486f2   web2      0.03%     12.86MiB / 1.921GiB   0.65%     5.33kB / 1.18kB   1.66MB / 28.7kB   82
+```
+
 #### Detener un contenedor
 Cuando no queramos hacer uso del contenedor, podemos detener su ejecución con el comando ```docker container stop```, que tiene la siguiente sintaxis:
 
@@ -621,7 +636,6 @@ eth3rup@debian:~$ docker container list
 CONTAINER ID   IMAGE     COMMAND                  CREATED       STATUS                     PORTS     NAMES
 ff089f6486f2   nginx     "/docker-entrypoint.…"   7 minutes ago   Up 6 minutes               80/tcp    web2
 ab0b901e7e27   nginx     "/docker-entrypoint.…"   17 minutes ago   Up 9 seconds             wizardly_bhabha
-
 ```
 
 > **😎 Truco**
@@ -728,7 +742,86 @@ Para salir de la consola simplemente usamos la orden ```exit```
 
 Gestión de imágenes
 ===============================================================================================================================
-Texto.
+Hasta ahora hemos visto cómo podemos trabajar con contenedores a partir de imágenes ya existentes. Ahora daremos un paso más y empezaremos a crear nuestras propias imágenes.
+
+#### Generar una imagen en Docker
+A la hora de generar una imagen en Docker deberemos tener en cuenta dos elementos esenciales: 
+
+* El archivo ***Dockerfile***, que va a contener toda la información necesaria para generar la imagen.
+* El comando ```Docker build```, que se encargará de interpretar ese archivo y construir la imagen.
+
+##### El archivo *Dockerfile*
+La redacción del archivo Dockerfile es la clave para la creación de la imagen. Hay una amplia variedad de instrucciones para incluir en este archivo (puedes consultarlas todas en la [Documentación oficial de Docker](https://docs.docker.com/engine/reference/builder/)).
+
+Para introducirnos en la redacción de este archivo, vamos a comenzar con un ejemplo muy sencillo en el que crearemos una imagen para una aplicación web que queremos desarrollar en Python con Flask.
+
+Una primera aproximación al archivo Dockerfile sería la siguiente:
+
+```bash
+FROM ubuntu:latest
+RUN apt-get update -y
+RUN apt-get install -y python3-pip python-dev-is-python3
+WORKDIR /miapp
+ENV TEST=True
+EXPOSE 80
+VOLUME /datos_miapp
+COPY . /miapp
+RUN pip install -r requisitos.txt
+ENTRYPOINT ["python"]
+CMD ["miapp.py"]
+```
+
+* ``FROM ubuntu:latest``
+Partimos de la imagen oficial de ubuntu en su última versión (``latest``). A partir de aquí, cada instrucción del archivo va a ir añadiendo una capa a la imagen descargada.
+
+* ``RUN apt-get update -y``
+``RUN apt-get install -y python3-pip python-dev-is-python3``
+Se actualiza el repositorio del sistema y se instalan los paquetes que se van a necesitar de Python3.
+
+* ``WORKDIR /miapp``
+aa
+* ``ENV TEST=True``
+aa
+* ``EXPOSE 80``
+aa
+* ``VOLUME /datos_miapp``
+aa
+* ``COPY . /miapp``
+aa
+* ``RUN pip install -r requisitos.txt``
+aa
+* ``ENTRYPOINT ["python"]``
+aa
+* ``CMD ["miapp.py"]``
+aa
+
+```bash
+eth3rup@debian:~$ docker build -t appflask .
+[+] Building 210.1s (11/11) FINISHED                                                         docker:default
+ => [internal] load build definition from Dockerfile                                                   0.2s
+ => => transferring dockerfile: 284B                                                                   0.1s
+ => [internal] load .dockerignore                                                                      0.2s
+ => => transferring context: 2B                                                                        0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest                                       2.7s
+ => [1/6] FROM docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac  21.0s
+ => => resolve docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac8  0.1s
+ => => sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac8176c6e496e5c1f05f 1.13kB / 1.13kB         0.0s
+ => => sha256:c9cf959fd83770dfdefd8fb42cfef0761432af36a764c077aed54bbc5bb25368 424B / 424B             0.0s
+ => => sha256:e4c58958181a5925816faa528ce959e487632f4cfd192f8132f71b32df2744b4 2.30kB / 2.30kB         0.0s
+ => => sha256:aece8493d3972efa43bfd4ee3cdba659c0f787f8f59c82fb3e48c87cbb22a12e 29.54MB / 29.54MB       7.5s
+ => => extracting sha256:aece8493d3972efa43bfd4ee3cdba659c0f787f8f59c82fb3e48c87cbb22a12e             12.4s
+ => [internal] load build context                                                                     33.4s
+ => => transferring context: 98.19MB                                                                  33.1s
+ => [2/6] RUN apt-get update -y                                                                       29.4s
+ => [3/6] RUN apt-get install -y python3-pip python-dev-is-python3                                   122.3s
+ => [4/6] WORKDIR /miapp                                                                               0.5s 
+ => [5/6] COPY . /miapp                                                                                6.0s 
+ => [6/6] RUN pip install -r requisitos.txt                                                            6.4s 
+ => exporting to image                                                                                21.1s 
+ => => exporting layers                                                                               21.1s 
+ => => writing image sha256:210933dc23d8252a72ba9a364a3fc1270ca052bb8f774ed96f09c6cbdf47d1ed           0.0s 
+ => => naming to docker.io/library/appflask                                                            0.0s`
+ ```
 #### Importar imágenes de Docker Hub
 Para cre
 #### Exportar imágenes a Docker Hub

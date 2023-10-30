@@ -755,6 +755,24 @@ La redacción del archivo Dockerfile es la clave para la creación de la imagen.
 
 Para introducirnos en la redacción de este archivo, vamos a comenzar con un ejemplo muy sencillo en el que crearemos una imagen para una aplicación web que queremos desarrollar en Python con Flask.
 
+
+> **⚠️ A tener en cuenta...**
+> En este ejemplo, el contenido del archivo de ejemplo de aplicación web _**miapp.py**_ es este:
+> ```
+>from flask import Flask
+>
+>app = Flask(__name__)
+>
+>@app.route('/')
+>def hello_world():
+>    return 'Hola Mundo'
+>
+>if __name__ == '__main__':
+>    app.run(debug=True,host='0.0.0.0')
+>
+>```
+
+
 Una primera aproximación al archivo Dockerfile sería la siguiente:
 
 ```bash
@@ -763,13 +781,26 @@ RUN apt-get update -y
 RUN apt-get install -y python3-pip python-dev-is-python3
 WORKDIR /miapp
 ENV TEST=True
-EXPOSE 80
+EXPOSE 5000
 VOLUME /datos_miapp
 COPY . /miapp
 RUN pip install -r requisitos.txt
-ENTRYPOINT ["python3"]
+ENTRYPOINT ["python"]
 CMD ["miapp.py"]
 ```
+
+> **⚠️ A tener en cuenta...**
+> En este ejemplo, el contenido del archivo _**requisitos.txt**_ es este:
+> ```
+>blinker==1.6.3
+>click==8.1.7
+>Flask==3.0.0
+>itsdangerous==2.1.2
+>Jinja2==3.1.2
+>MarkupSafe==2.1.3
+>Werkzeug==3.0.1
+>```
+
 
 * ``FROM ubuntu:latest``
 Partimos de la imagen oficial de ubuntu en su última versión (``latest``). A partir de aquí, cada instrucción del archivo va a ir añadiendo una capa a la imagen descargada.
@@ -779,49 +810,64 @@ Partimos de la imagen oficial de ubuntu en su última versión (``latest``). A p
 Se actualiza el repositorio del sistema y se instalan los paquetes que se van a necesitar de Python3.
 
 * ``WORKDIR /miapp``
-Establece el directorio de trabajo del contenedor.
+Establece el directorio de trabajo del contenedor, que actuará como "raiz" para las operaciones del tipo ```COPY```, ```RUN```, ```CMD``` o ```ENTRYPOINT```.
 * ``ENV DEBUG=True``
 Fija la variable de entorno DEBUG y le asigna un valor. Esta variable irá al contexto del contenedor.
-* ``EXPOSE 80``
-aa
+* ``EXPOSE 5000``
+Establece un puerto de escucha en el contenedor. Pueden establecerse varios, tanto TCP como UDP. Por defecto, si no se establece lo contrario, se consideran TCP.
 * ``VOLUME /datos_miapp``
-aa
+Permite generar volúmenes persistentes a la vida del contenedor. Así se consiguen dos cosas:
+1) Que el tamaño del contenedor no aumente, y así sea más manejable.
+2) Que se mantengan datos con independencia del contenedor.
 * ``COPY . /miapp``
-aa
+Añade archivos en la imagen desde un lugar externo (nuestro equipo u otro lugar).
 * ``RUN pip install -r requisitos.txt``
-aa
+Ejecuta una orden. En este caso, instala los paquetes que he recogido en el archivo ```requisitos.txt```, el cual he copiado a la imagen en el paso anterior.
 * ``ENTRYPOINT ["python"]``
-aa
+Ejecuta el comando.
 * ``CMD ["miapp.py"]``
-aa
+La orden ```CMD``` tiene un funcionamiento similar a ```ENTRYPOINT```. Sin embargo, cuando van combinadas, ```CMD``` actúa como los parámetros que llevaría la orden lanzada por ```ENTRYPOINT```. En este caso, se ejecutaría la sentencia ```python miapp.py```
 
 ```bash
 eth3rup@debian:~$ docker build -t appflask .
-[+] Building 210.1s (11/11) FINISHED                                                         docker:default
- => [internal] load build definition from Dockerfile                                                   0.2s
- => => transferring dockerfile: 284B                                                                   0.1s
- => [internal] load .dockerignore                                                                      0.2s
- => => transferring context: 2B                                                                        0.0s
- => [internal] load metadata for docker.io/library/ubuntu:latest                                       2.7s
- => [1/6] FROM docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac  21.0s
- => => resolve docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac8  0.1s
- => => sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fecac8176c6e496e5c1f05f 1.13kB / 1.13kB         0.0s
- => => sha256:c9cf959fd83770dfdefd8fb42cfef0761432af36a764c077aed54bbc5bb25368 424B / 424B             0.0s
- => => sha256:e4c58958181a5925816faa528ce959e487632f4cfd192f8132f71b32df2744b4 2.30kB / 2.30kB         0.0s
- => => sha256:aece8493d3972efa43bfd4ee3cdba659c0f787f8f59c82fb3e48c87cbb22a12e 29.54MB / 29.54MB       7.5s
- => => extracting sha256:aece8493d3972efa43bfd4ee3cdba659c0f787f8f59c82fb3e48c87cbb22a12e             12.4s
- => [internal] load build context                                                                     33.4s
- => => transferring context: 98.19MB                                                                  33.1s
- => [2/6] RUN apt-get update -y                                                                       29.4s
- => [3/6] RUN apt-get install -y python3-pip python-dev-is-python3                                   122.3s
- => [4/6] WORKDIR /miapp                                                                               0.5s 
- => [5/6] COPY . /miapp                                                                                6.0s 
- => [6/6] RUN pip install -r requisitos.txt                                                            6.4s 
- => exporting to image                                                                                21.1s 
- => => exporting layers                                                                               21.1s 
- => => writing image sha256:210933dc23d8252a72ba9a364a3fc1270ca052bb8f774ed96f09c6cbdf47d1ed           0.0s 
- => => naming to docker.io/library/appflask                                                            0.0s`
+[+] Building 39.4s (11/11) FINISHED                              docker:default
+ => [internal] load build definition from Dockerfile                       0.2s
+ => => transferring dockerfile: 286B                                       0.2s
+ => [internal] load .dockerignore                                          0.1s
+ => => transferring context: 2B                                            0.0s
+ => [internal] load metadata for docker.io/library/ubuntu:latest           1.7s
+ => [1/6] FROM docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5b  0.0s
+ => [internal] load build context                                         14.0s
+ => => transferring context: 92.04MB                                      13.2s
+ => CACHED [2/6] RUN apt-get update -y                                     0.0s
+ => CACHED [3/6] RUN apt-get install -y python3-pip python-dev-is-python3  0.0s
+ => CACHED [4/6] WORKDIR /miapp                                            0.0s
+ => [5/6] COPY . /miapp                                                   12.1s
+ => [6/6] RUN pip install -r requisitos.txt                                7.6s
+ => exporting to image                                                     3.3s 
+ => => exporting layers                                                    3.2s 
+ => => writing image sha256:f2f451ec30fbd463526bf64de5b549b499089666a73d2  0.0s 
+ => => naming to docker.io/library/appflask                                0.0s
  ```
+
+Si consultamos nuestro repositorio de imágenes, podremos observar que se ha creado satisfactoriamente:
+
+```bash
+eth3rup@debian:~$ docker image list -a
+REPOSITORY   TAG       IMAGE ID       CREATED         SIZE
+appflask     latest    f2f451ec30fb   24 seconds ago   604MB
+```
+
+...y ya podremos correr un contenedor basado en esta imagen:
+
+```bash
+eth3rup@debian:~$ docker container run --name app1 -it -p 5000:5000 -d appflask
+55c3e2b64486c11706b5f240a6d2d191a2102558bc7b6ec873faf798ddf0d960
+```
+
+[![img03-appflask.png](https://i.postimg.cc/wTYTTj2h/img03-appflask.png)](https://postimg.cc/Dm5KxFtZ)
+
+
 #### Importar imágenes de Docker Hub
 Para cre
 #### Exportar imágenes a Docker Hub

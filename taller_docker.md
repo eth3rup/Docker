@@ -748,7 +748,7 @@ Hasta ahora hemos visto cómo podemos trabajar con contenedores a partir de imá
 A la hora de generar una imagen en Docker deberemos tener en cuenta dos elementos esenciales: 
 
 * El archivo ***Dockerfile***, que va a contener toda la información necesaria para generar la imagen.
-* El comando ```Docker build```, que se encargará de interpretar ese archivo y construir la imagen.
+* El comando ```Docker image build```, que se encargará de interpretar ese archivo y construir la imagen.
 
 ##### El archivo *Dockerfile*
 La redacción del archivo Dockerfile es la clave para la creación de la imagen. Hay una amplia variedad de instrucciones para incluir en este archivo (puedes consultarlas todas en la [Documentación oficial de Docker](https://docs.docker.com/engine/reference/builder/)).
@@ -757,6 +757,7 @@ Para introducirnos en la redacción de este archivo, vamos a comenzar con un eje
 
 
 > **⚠️ A tener en cuenta...**
+>
 > En este ejemplo, el contenido del archivo de ejemplo de aplicación web _**miapp.py**_ es este:
 > ```
 >from flask import Flask
@@ -773,7 +774,7 @@ Para introducirnos en la redacción de este archivo, vamos a comenzar con un eje
 >```
 
 
-Una primera aproximación al archivo Dockerfile sería la siguiente:
+Una primera aproximación al archivo _**Dockerfile**_ sería la siguiente:
 
 ```bash
 FROM ubuntu:latest
@@ -790,6 +791,7 @@ CMD ["miapp.py"]
 ```
 
 > **⚠️ A tener en cuenta...**
+>
 > En este ejemplo, el contenido del archivo _**requisitos.txt**_ es este:
 > ```
 >blinker==1.6.3
@@ -801,6 +803,7 @@ CMD ["miapp.py"]
 >Werkzeug==3.0.1
 >```
 
+A continuación comentamos la finalidad de cada una de las líneas del archivo _**Dockerfile**_
 
 * ``FROM ubuntu:latest``
 Partimos de la imagen oficial de ubuntu en su última versión (``latest``). A partir de aquí, cada instrucción del archivo va a ir añadiendo una capa a la imagen descargada.
@@ -817,8 +820,8 @@ Fija la variable de entorno DEBUG y le asigna un valor. Esta variable irá al co
 Establece un puerto de escucha en el contenedor. Pueden establecerse varios, tanto TCP como UDP. Por defecto, si no se establece lo contrario, se consideran TCP.
 * ``VOLUME /datos_miapp``
 Permite generar volúmenes persistentes a la vida del contenedor. Así se consiguen dos cosas:
-1) Que el tamaño del contenedor no aumente, y así sea más manejable.
-2) Que se mantengan datos con independencia del contenedor.
+  * Que el tamaño del contenedor no aumente, y así sea más manejable.
+  * Que se mantengan datos con independencia del contenedor.
 * ``COPY . /miapp``
 Añade archivos en la imagen desde un lugar externo (nuestro equipo u otro lugar).
 * ``RUN pip install -r requisitos.txt``
@@ -828,34 +831,51 @@ Ejecuta el comando.
 * ``CMD ["miapp.py"]``
 La orden ```CMD``` tiene un funcionamiento similar a ```ENTRYPOINT```. Sin embargo, cuando van combinadas, ```CMD``` actúa como los parámetros que llevaría la orden lanzada por ```ENTRYPOINT```. En este caso, se ejecutaría la sentencia ```python miapp.py```
 
+##### El comando ``docker image build``
+Para construir la imagen utilizamos el comando ```docker image build``` con la siguiente sintaxis:
+
+```docker image build [OPCIONES] CONTEXTO```
+
+El _contexto_ por defecto es la ruta desde la que operamos (lo que normalmente indicaremos con ```.```). De todas las opciones que tiene el comando, para nuestro propósito vamos a optar por utilizar ```-t``` para asignarle un nombre a la imagen que nos permita manipularla posteriormente de forma más sencilla.
+
 ```bash
-eth3rup@debian:~$ docker build -t appflask .
-[+] Building 39.4s (11/11) FINISHED                              docker:default
+eth3rup@debian:~$ docker image build -t appflask .
+[+] Building 184.0s (11/11) FINISHED                             docker:default
  => [internal] load build definition from Dockerfile                       0.2s
- => => transferring dockerfile: 286B                                       0.2s
- => [internal] load .dockerignore                                          0.1s
+ => => transferring dockerfile: 286B                                       0.1s
+ => [internal] load .dockerignore                                          0.2s
  => => transferring context: 2B                                            0.0s
- => [internal] load metadata for docker.io/library/ubuntu:latest           1.7s
- => [1/6] FROM docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5b  0.0s
- => [internal] load build context                                         14.0s
- => => transferring context: 92.04MB                                      13.2s
- => CACHED [2/6] RUN apt-get update -y                                     0.0s
- => CACHED [3/6] RUN apt-get install -y python3-pip python-dev-is-python3  0.0s
- => CACHED [4/6] WORKDIR /miapp                                            0.0s
- => [5/6] COPY . /miapp                                                   12.1s
- => [6/6] RUN pip install -r requisitos.txt                                7.6s
- => exporting to image                                                     3.3s 
- => => exporting layers                                                    3.2s 
- => => writing image sha256:f2f451ec30fbd463526bf64de5b549b499089666a73d2  0.0s 
+ => [internal] load metadata for docker.io/library/ubuntu:latest           2.3s
+ => [1/6] FROM docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5b  0.5s
+ => => resolve docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5b  0.1s
+ => => sha256:2b7412e6465c3c7fc5bb21d3e6f1917c167358449fe 1.13kB / 1.13kB  0.0s
+ => => sha256:c9cf959fd83770dfdefd8fb42cfef0761432af36a764c07 424B / 424B  0.0s
+ => => sha256:e4c58958181a5925816faa528ce959e487632f4cfd1 2.30kB / 2.30kB  0.0s
+ => [internal] load build context                                         21.1s
+ => => transferring context: 127.83MB                                     20.9s
+ => [2/6] RUN apt-get update -y                                           25.6s
+ => [3/6] RUN apt-get install -y python3-pip python-dev-is-python3       115.5s
+ => [4/6] WORKDIR /miapp                                                   0.4s 
+ => [5/6] COPY . /miapp                                                   11.6s 
+ => [6/6] RUN pip install -r requisitos.txt                                5.7s 
+ => exporting to image                                                    21.2s 
+ => => exporting layers                                                   21.2s 
+ => => writing image sha256:0f434183eb1c32e731e6b6538da7a3970b8c6fa8f5e35  0.0s 
  => => naming to docker.io/library/appflask                                0.0s
  ```
+
+Cada uno de los pasos que se llevan a cabo en el proceso de generación de la imagen producen una de estas dos cosas:
+  * Una capa sobre la anterior.
+  * Metadatos en la imagen.
+Así, el proceso de generación de la imagen sería, en realidad, la generación de capas sobre una imagen original (en nuestro caso, sobre *ubuntu:latest*)
+
 
 Si consultamos nuestro repositorio de imágenes, podremos observar que se ha creado satisfactoriamente:
 
 ```bash
 eth3rup@debian:~$ docker image list -a
 REPOSITORY   TAG       IMAGE ID       CREATED         SIZE
-appflask     latest    f2f451ec30fb   24 seconds ago   604MB
+appflask     latest    0f434183eb1c   24 seconds ago   604MB
 ```
 
 ...y ya podremos correr un contenedor basado en esta imagen:
@@ -868,8 +888,123 @@ eth3rup@debian:~$ docker container run --name app1 -it -p 5000:5000 -d appflask
 [![img03-appflask.png](https://i.postimg.cc/wTYTTj2h/img03-appflask.png)](https://postimg.cc/Dm5KxFtZ)
 
 
-#### Importar imágenes de Docker Hub
-Para cre
+##### La caché de Docker
+Como hemos visto, el proceso de generación de una imagen es una acción secuencial en la que se va leyendo el archivo *Dockerfile*.
+Este proceso tiene un "problema" importante, ya que si debemos repetirlo, hay que pasar por cada una de las órdenes del archivo para obtener la imagen.
+El hecho de que la organización de la imagen sea por capas, va a permitir optimizar bastante el proceso, ya que permite "porcionar" el procedimiento en secuencias más simples.
+
+Vamos a verlo con un ejemplo muy sencillo: en el caso de la aplicación web con Flask, cambiaremos el archivo miapp.py para que en lugar de mostrar "Hola Mundo" muestre "Nueva versión". El resto lo mantendremos tal cual estaba.
+
+Una vez modificado ese archivo, volvemos a construir la imagen:
+
+```bash
+eth3rup@debian:~$ docker image build -t appflask .
+[+] Building 44.9s (11/11) FINISHED                              docker:default
+ => [internal] load build definition from Dockerfile                       0.3s
+ => => transferring dockerfile: 286B                                       0.1s
+ => [internal] load .dockerignore                                          0.2s
+ => => transferring context: 2B                                            0.1s
+ => [internal] load metadata for docker.io/library/ubuntu:latest           2.4s
+ => [1/6] FROM docker.io/library/ubuntu:latest@sha256:2b7412e6465c3c7fc5b  0.0s
+ => [internal] load build context                                          6.0s
+ => => transferring context: 27.90MB                                       5.7s
+ => CACHED [2/6] RUN apt-get update -y                                     0.0s
+ => CACHED [3/6] RUN apt-get install -y python3-pip python-dev-is-python3  0.0s
+ => CACHED [4/6] WORKDIR /miapp                                            0.0s
+ => [5/6] COPY . /miapp                                                   23.3s
+ => [6/6] RUN pip install -r requisitos.txt                               10.2s
+ => exporting to image                                                     2.1s 
+ => => exporting layers                                                    2.1s 
+ => => writing image sha256:4d6fcf77f8e8a04b9828c4d397b26d6f267659747a5e3  0.0s 
+ => => naming to docker.io/library/appflask                                0.0s
+```
+
+Si consultamos de nuevo nuestro repositorio de imágenes, podremos observar que se ha creado satisfactoriamente:
+
+```bash
+eth3rup@debian:~$ docker image list -a
+REPOSITORY   TAG       IMAGE ID       CREATED         SIZE
+appflask     latest    4d6fcf77f8e8   30 seconds ago   603MB
+```
+
+...y ya podremos correr un contenedor basado en esta nueva imagen:
+
+```bash
+eth3rup@debian:~$ docker container run --name app2 -it -p 5000:5000 -d appflask
+0e7bd3c69a05dabf0ab98c23db613dc81669ce30bdbc11f1a1203d8c45f19477
+```
+
+[![img03-appflaskv2.png](https://i.postimg.cc/bNTQw2Qn/img03-appflaskv2.png)](https://postimg.cc/mtPcdkpZ)
+
+Si comparamos esta construcción con la que hicimos originalmente, vemos lo siguiente:
+
+1) Las acciones 2, 3 y 4 aparecen con la etiqueta ```CACHED```. Esto es así porque **Docker ha guardado en su caché** la información de estas capas y en el proceso de construcción, al comprobar que no suponen un cambio sobre la construcción original, en lugar de procesarlas de nuevo, las replica desde la caché. De esta manera nos ahorramos los 141.5 segundos que hubiera llevado (aproximadamente) repetir esos pasos.
+
+2) La acción 5 ya difiere de la construcción original (porque hemos variado el contenido de ```/miapp```), de forma que a partir de aquí abandona la caché y genera nuevas capas ejecutando las sentencias del archivo *Dockerfile*.
+
+> **⚠️ Importante**
+>
+> Desde el momento en que haya una diferencia sobre las capas cacheadas, la caché se invalida y el resto se va a generar nuevo, con independencia de que líneas posteriores a la que produjo el cambio no generasen modificaciones, ya que la capa sobre la que se asentarían sería nueva.
+
+De aquí sacamos una conclusión muy importante, y es que el orden en que se plantean las diferentes instrucciones del archivo *Dockerfile* va a favorecer (o no) la optimización de las imágenes; esencialmente cuando están sujetas a cambios.
+
+Si la orden ```COPY . /miapp``` la hubiéramos colocado antes de las operaciones 2, 3 y 4, el cambio en ```/miapp``` habría ocasionado que la información cacheada no hubiera servido, con lo que la construcción exigiría un nuevo paso por ellas cada vez que quisiéramos hacer un cambio ahí. Por ese motivo, a la hora de redactar un archivo _Dockerfile_ conviene que el orden de las operaciones haga que aquellas que previsiblemente vayan a producir cambios estén lo más abajo posible; así se verían afectadas menos capas y la caché se optimizaría.
+
+
+> **⚠️ Importante**
+>
+> **La caché de Docker es local.** Por este motivo, la primera vez que hagamos la construcción de una imagen, se ejecutarán todas sus capas aunque tengamos esa imagen en un registro de Docker.
+
+
+#### Exportar imágenes de Docker Hub
+Como vimos en el apartado [Acceder a Docker Hub desde terminal](#acceder-a-docker-hub-desde-terminal), en ocasiones necesitaremos estar logueados en Docker Hub para poder importar/exportar imágenes privadas.
+
+Antes de exportar nuestra imagen a Docker Hub debemos tener en cuenta que es indispensable que ésta esté etiquetada correctamente. El formato de la etiqueta será:
+
+**```usuario/repositorio:etiqueta```**
+
+Para cambiar la etiqueta de una imagen utilizamos el comando ```docker image tag```, que tiene la siguiente sintaxis:
+
+```docker image tag IMAGEN_ORIG[:TAG] IMAGEN_DEST[:TAG]```
+
+Por ejemplo, si queremos preparar la imagen de la aplicación web en Flask que creamos en el apartado anterior, lo haríamos así:
+
+```bash
+eth3rup@debian:~$ docker tag appflask:latest iesalisal/appflask:latest
+
+eth3rup@debian:~$ docker image list -a
+REPOSITORY           TAG       IMAGE ID       CREATED       SIZE
+iesalisal/appflask   latest    4d6fcf77f8e8   3 hours ago   603MB
+appflask             latest    4d6fcf77f8e8   3 hours ago   603MB
+```
+
+
+
+En cualquier caso, para subir una imagen a Docker Hub haremos uso del comando ```docker imagen push```, que tiene la siguiente sintaxis:
+
+```docker imagen push [OPCIONES] IMAGEN:TAG```
+
+Siguiendo el ejemplo del apartado anterior, si quisiéramos subir la imagen de la aplicación web en Flask, lo haríamos así:
+
+```bash
+eth3rup@debian:~$ docker push iesalisal/appflask
+Using default tag: latest
+The push refers to repository [docker.io/iesalisal/appflask]
+6f20fdcc571c: Pushed 
+3917bb451bd0: Pushed 
+90d39bb08065: Pushed 
+69c2d7607ab8: Pushed 
+fce8565643ef: Pushed 
+256d88da4185: Pushed 
+latest: digest: sha256:18d17cba5d1b9d244d6ceab8394588427510ed394e74743cdddb347351518c90 size: 1583
+```
+
+Y, como podemos comprobar, ya la tenemos publicada en nuestro perfil de Docker Hub
+
+[![img05-dockerhub.png](https://i.postimg.cc/tJMRVLLx/img05-dockerhub.png)](https://postimg.cc/0K71TH5k)
+
+
+
 #### Exportar imágenes a Docker Hub
 Para cre
 #### Listar imágenes en Docker
@@ -877,3 +1012,53 @@ Para cre
 
 #### Listar imágenes en Docker
 Para cre
+
+
+Miscelánea
+===============================================================================================================================
+
+#### Purgar el sistema Docker
+Cuando llevemos un tiempo trabajando con Docker, es posible que nos encontremos con un montón de imágenes, contenedores, redes,... que queramos eliminar. Además, no debemos olvidar que la caché de Docker también irá creciendo y nos ocupará espacio en disco.
+Por ello, conviene que conozcamos la existencia del comando ```docker system prune -a``` , cuya finalidad es eliminar:
+* Todos los contenedores que no estén en ejecución.
+* Todas las redes que no estén en uso por, al menos, un contenedor.
+* Todas las imágenes sin un contenedor asociado.
+* La caché de Docker.
+
+Aquí podemos observar un ejemplo de su ejecución:
+
+```bash
+eth3rup@debian:~$ docker system prune -a
+WARNING! This will remove:
+  - all stopped containers
+  - all networks not used by at least one container
+  - all images without at least one container associated to them
+  - all build cache
+
+Are you sure you want to continue? [y/N] y
+Deleted Images:
+deleted: sha256:210933dc23d8252a72ba9a364a3fc1270ca052bb8f774ed96f09c6cbdf47d1ed
+untagged: httpd:latest
+untagged: httpd@sha256:ed6db4a8c394d075c9c59a3dbd61a3818cd302d9948057f1e19046e5bffec027
+deleted: sha256:75a48b16cd565cdaff0cfcbe3462c292e56108a22b9733c0a04a9dc1cbd7a774
+deleted: sha256:27311d7559ba0793954c4f3961c8823da774219d330a1ba4c0b57ead5e4a331a
+deleted: sha256:86d50a544a6cbba8a8776cf28a02eed90194d252ac965f12b76a597c8a3f8239
+deleted: sha256:0192b2c6215c2c06b309421b9734f29e00470b3c110eed300e981070ba0ef992
+deleted: sha256:a1594487706cdf37bc27b66789e61b8eec4adc5cb3d9a712fcdf60b8e245575b
+deleted: sha256:cb4596cc145400fb1f2aa56d41516b39a366ecdee7bf3f9191116444aacd8c90
+
+Deleted build cache objects:
+q8ylpvosg0gf54zjv4b18h9fb
+6fo6qud7e29rgf2o3ix15orzb
+2wx16abj4o7fktspahm2v1v8y
+vw8qng803c7tkxd91x3f3olwu
+prqohfis748vfanmtadxoijen
+q83utl9kf9a2l19o4egwe893z
+xjtnvq3mmhtl8og958gqgqxqt
+dvwkv57bagc2a7m44scryxdar
+xwdiq3vejsmbdzcct79kcavmm
+k23jlthc8rgj07rtququoceur
+riylk0oc7uonjihb9ssfj7wln
+
+Total reclaimed space: 924.7MB
+```

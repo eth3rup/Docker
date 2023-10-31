@@ -33,9 +33,9 @@
      * [Listar imágenes en Docker](#listar-imágenes-en-docker)
      * [Mostrar información de una imagen](#mostrar-información-de-una-imagen)
      * [Eliminar una imagen](#eliminar-una-imagen)
-- []()
-     * []()
-- [Miscelánea](#miscelánea)
+- [Orquestación de contenedores](#orquestación-de-contenedores)
+     * [Docker Compose](#docker-compose)
+
 
         
      

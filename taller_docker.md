@@ -7,10 +7,12 @@
 - [Instalación de Docker en Debian](#instalación-de-docker-en-debian)
 - [Uso de la ayuda en Docker](#uso-de-la-ayuda-en-docker)
 - [Componentes de Docker](#componentes-de-docker)
+     * [Arquitectura de Docker](#arquitectura-de-docker)
      * [Información sobre Docker](#información-sobre-docker)
      * [Docker Hub](#docker-hub)
      * [Información de las imágenes de Docker Hub](#información-de-las-imágenes-de-docker-hub)
      * [Acceder a Docker desde terminal](#acceder-a-docker-hub-desde-terminal)
+     * [Purgar el sistema Docker](#purgar-el-sistema-docker)
 - [Gestión de contenedores](#Gestión-de-contenedores)
      * [Crear contenedores](#crear-contenedores)
      * [Listar contenedores](#listar-contenedores)
@@ -34,7 +36,7 @@
 - []()
      * []()
 - [Miscelánea](#miscelánea)
-     * [Purgar el sistema Docker](#purgar-el-sistema-docker)
+
         
      
 Instalación de Docker en Debian
@@ -234,7 +236,17 @@ Además de la propia ayuda del sistema, en la [web oficial de Docker](https://do
 
 Componentes de Docker
 ===============================================================================================================================
-TEXTO PENDIENTE
+#### Arquitectura de Docker
+La arquitectura de Docker está sustentada en tres elementos:
+* **Cliente**: corresponde al equipo desde el cual el usuario ejecuta las órdenes de Docker.
+* **Docker Engine**: comprende el núcleo de Docker. Está gestionado por el _**demonio de Docker**_. Puede correr en la misma máquina que el cliente (que es lo habitual), pero también puede funcionar en remoto. En este elemento se ejecutan todas las órdenes que lanza el cliente, encargándose también del alojamiento de las imágenes y los contenedores.
+* **Registro**: constituye un repositorio de imágenes. El _Docker Engine_ se nutrirá de este repositorio. El registro funciona realmente como un servicio, por lo que pueden utilizarse tantos como se deseen, en cualquier ubicación.
+
+De forma visual, la relación de estos elementos se muestra en la siguiente imagen:
+
+[![img05-dockerhub.png](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*09i6gCc0tBhSsXToKA7Cnw.png)](Arquitectura_de_Docker)
+ 
+
 #### Información sobre Docker
 Hay dos comandos que nos dan información sobre Docker:
 
@@ -384,6 +396,52 @@ https://docs.docker.com/engine/reference/commandline/login/#credentials-store
 
 Login Succeeded
 
+```
+
+#### Purgar el sistema Docker
+Cuando llevemos un tiempo trabajando con Docker, es posible que nos encontremos con un montón de imágenes, contenedores, redes,... que queramos eliminar. Además, no debemos olvidar que la caché de Docker también irá creciendo y nos ocupará espacio en disco.
+Por ello, conviene que conozcamos la existencia del comando ```docker system prune -a``` , cuya finalidad es eliminar:
+* Todos los contenedores que no estén en ejecución.
+* Todas las redes que no estén en uso por, al menos, un contenedor.
+* Todas las imágenes sin un contenedor asociado.
+* La caché de Docker.
+
+Aquí podemos observar un ejemplo de su ejecución:
+
+```bash
+eth3rup@debian:~$ docker system prune -a
+WARNING! This will remove:
+  - all stopped containers
+  - all networks not used by at least one container
+  - all images without at least one container associated to them
+  - all build cache
+
+Are you sure you want to continue? [y/N] y
+Deleted Images:
+deleted: sha256:210933dc23d8252a72ba9a364a3fc1270ca052bb8f774ed96f09c6cbdf47d1ed
+untagged: httpd:latest
+untagged: httpd@sha256:ed6db4a8c394d075c9c59a3dbd61a3818cd302d9948057f1e19046e5bffec027
+deleted: sha256:75a48b16cd565cdaff0cfcbe3462c292e56108a22b9733c0a04a9dc1cbd7a774
+deleted: sha256:27311d7559ba0793954c4f3961c8823da774219d330a1ba4c0b57ead5e4a331a
+deleted: sha256:86d50a544a6cbba8a8776cf28a02eed90194d252ac965f12b76a597c8a3f8239
+deleted: sha256:0192b2c6215c2c06b309421b9734f29e00470b3c110eed300e981070ba0ef992
+deleted: sha256:a1594487706cdf37bc27b66789e61b8eec4adc5cb3d9a712fcdf60b8e245575b
+deleted: sha256:cb4596cc145400fb1f2aa56d41516b39a366ecdee7bf3f9191116444aacd8c90
+
+Deleted build cache objects:
+q8ylpvosg0gf54zjv4b18h9fb
+6fo6qud7e29rgf2o3ix15orzb
+2wx16abj4o7fktspahm2v1v8y
+vw8qng803c7tkxd91x3f3olwu
+prqohfis748vfanmtadxoijen
+q83utl9kf9a2l19o4egwe893z
+xjtnvq3mmhtl8og958gqgqxqt
+dvwkv57bagc2a7m44scryxdar
+xwdiq3vejsmbdzcct79kcavmm
+k23jlthc8rgj07rtququoceur
+riylk0oc7uonjihb9ssfj7wln
+
+Total reclaimed space: 924.7MB
 ```
 
 Gestion de contenedores
@@ -1016,7 +1074,7 @@ docker.io/iesalisal/appflask:latest
 ```
 El proceso ha comprobado que ya teníamos en nuestro Docker Engine la misma imagen que hay en nuestro Docker Hub (mismo hash), por lo que no la descarga.
 Incluso si eliminamos la imagen, veremos que obtenemos el mismo resultado, ya que contamos con la [caché de Docker](#la-caché-de-docker).
-Si purgamos el sistema Docker y volvemos a repetir el proceso, entonces veremos que la importación se hace como si se tratara de cualquier otra imagen (teniendo en cuenta que debemos estar logueados en Docker Hub, porque esta imagen es privada).
+Si [purgamos el sistema Docker](#purgar-el-sistema-docker) y volvemos a repetir el proceso, entonces veremos que la importación se hace como si se tratara de cualquier otra imagen (teniendo en cuenta que debemos estar logueados en Docker Hub, porque esta imagen es privada).
 
 ```bash
 eth3rup@debian:~$ docker pull iesalisal/appflask
@@ -1184,51 +1242,8 @@ Deleted: sha256:28aee5e55114320f616acc3b61914b1264a7b51fe55cea2bfb56b2ab4983333f
 ```
 
 
-Miscelánea
+Orquestación de contenedores
 ===============================================================================================================================
 
-#### Purgar el sistema Docker
-Cuando llevemos un tiempo trabajando con Docker, es posible que nos encontremos con un montón de imágenes, contenedores, redes,... que queramos eliminar. Además, no debemos olvidar que la caché de Docker también irá creciendo y nos ocupará espacio en disco.
-Por ello, conviene que conozcamos la existencia del comando ```docker system prune -a``` , cuya finalidad es eliminar:
-* Todos los contenedores que no estén en ejecución.
-* Todas las redes que no estén en uso por, al menos, un contenedor.
-* Todas las imágenes sin un contenedor asociado.
-* La caché de Docker.
-
-Aquí podemos observar un ejemplo de su ejecución:
-
-```bash
-eth3rup@debian:~$ docker system prune -a
-WARNING! This will remove:
-  - all stopped containers
-  - all networks not used by at least one container
-  - all images without at least one container associated to them
-  - all build cache
-
-Are you sure you want to continue? [y/N] y
-Deleted Images:
-deleted: sha256:210933dc23d8252a72ba9a364a3fc1270ca052bb8f774ed96f09c6cbdf47d1ed
-untagged: httpd:latest
-untagged: httpd@sha256:ed6db4a8c394d075c9c59a3dbd61a3818cd302d9948057f1e19046e5bffec027
-deleted: sha256:75a48b16cd565cdaff0cfcbe3462c292e56108a22b9733c0a04a9dc1cbd7a774
-deleted: sha256:27311d7559ba0793954c4f3961c8823da774219d330a1ba4c0b57ead5e4a331a
-deleted: sha256:86d50a544a6cbba8a8776cf28a02eed90194d252ac965f12b76a597c8a3f8239
-deleted: sha256:0192b2c6215c2c06b309421b9734f29e00470b3c110eed300e981070ba0ef992
-deleted: sha256:a1594487706cdf37bc27b66789e61b8eec4adc5cb3d9a712fcdf60b8e245575b
-deleted: sha256:cb4596cc145400fb1f2aa56d41516b39a366ecdee7bf3f9191116444aacd8c90
-
-Deleted build cache objects:
-q8ylpvosg0gf54zjv4b18h9fb
-6fo6qud7e29rgf2o3ix15orzb
-2wx16abj4o7fktspahm2v1v8y
-vw8qng803c7tkxd91x3f3olwu
-prqohfis748vfanmtadxoijen
-q83utl9kf9a2l19o4egwe893z
-xjtnvq3mmhtl8og958gqgqxqt
-dvwkv57bagc2a7m44scryxdar
-xwdiq3vejsmbdzcct79kcavmm
-k23jlthc8rgj07rtququoceur
-riylk0oc7uonjihb9ssfj7wln
-
-Total reclaimed space: 924.7MB
-```
+#### Docker Compose
+a 

@@ -790,7 +790,7 @@ ENTRYPOINT ["python"]
 CMD ["miapp.py"]
 ```
 
-> **⚠️ A tener en cuenta...**
+> **👉 A tener en cuenta...**
 >
 > En este ejemplo, el contenido del archivo _**requisitos.txt**_ es este:
 > ```
@@ -956,8 +956,14 @@ Si la orden ```COPY . /miapp``` la hubiéramos colocado antes de las operaciones
 > **La caché de Docker es local.** Por este motivo, la primera vez que hagamos la construcción de una imagen, se ejecutarán todas sus capas aunque tengamos esa imagen en un registro de Docker.
 
 
-#### Exportar imágenes de Docker Hub
-Como vimos en el apartado [Acceder a Docker Hub desde terminal](#acceder-a-docker-hub-desde-terminal), en ocasiones necesitaremos estar logueados en Docker Hub para poder importar/exportar imágenes privadas.
+#### Exportar imágenes a Docker Hub
+Como vimos en el apartado [Acceder a Docker Hub desde terminal](#acceder-a-docker-hub-desde-terminal), para poder exportar imágenes a nuestro espacio de Docker Hub, necesitaremos estar logueados en él, con independencia de que las imágenes las establezcamos como públicas o privadas.
+
+
+> **👉 A tener en cuenta...**
+>
+> La **versión gratuita de Docker Hub** sólo nos permitirá disponer de **un repositorio privado**, por lo que sólo podremos exportar una imagen de este modo (con todas las versiones que queramos, eso sí). 
+
 
 Antes de exportar nuestra imagen a Docker Hub debemos tener en cuenta que es indispensable que ésta esté etiquetada correctamente. El formato de la etiqueta será:
 
@@ -977,8 +983,6 @@ REPOSITORY           TAG       IMAGE ID       CREATED       SIZE
 iesalisal/appflask   latest    4d6fcf77f8e8   3 hours ago   603MB
 appflask             latest    4d6fcf77f8e8   3 hours ago   603MB
 ```
-
-
 
 En cualquier caso, para subir una imagen a Docker Hub haremos uso del comando ```docker imagen push```, que tiene la siguiente sintaxis:
 
@@ -1004,9 +1008,54 @@ Y, como podemos comprobar, ya la tenemos publicada en nuestro perfil de Docker H
 [![img05-dockerhub.png](https://i.postimg.cc/tJMRVLLx/img05-dockerhub.png)](https://postimg.cc/0K71TH5k)
 
 
+#### Importar imágenes de Docker Hub
+En el apartado [Crear contenedores](#crear-contenedores) vimos como la operación ```docker container run``` producía una importación de una imagen si no la teníamos disponible en nuestro Docker Engine.
+En cualquier caso, es posible importar una imagen sin necesidad de crear un contenedor que haga uso de ella. Para ello hacemos uso del comando ```docker imagen pull```, que tiene la siguiente sintaxis:
 
-#### Exportar imágenes a Docker Hub
-Para cre
+```docker imagen pull [OPCIONES] IMAGEN:TAG```
+
+En el caso de que quisiéramos importar la imagen de la aplicación web en Flask que subimos anteriormente, lo haríamos así:
+
+```bash
+eth3rup@debian:~$ docker pull iesalisal/appflask
+latest: Pulling from iesalisal/appflask
+Digest: sha256:18d17cba5d1b9d244d6ceab8394588427510ed394e74743cdddb347351518c90
+Status: Image is up to date for iesalisal/appflask:latest
+docker.io/iesalisal/appflask:latest
+```
+El proceso ha comprobado que ya teníamos en nuestro Docker Engine la misma imagen que hay en nuestro Docker Hub (mismo hash), por lo que no la descarga.
+Incluso si eliminamos la imagen, veremos que obtenemos el mismo resultado, ya que contamos con la [caché de Docker](#la-caché-de-docker).
+Si purgamos el sistema Docker y volvemos a repetir el proceso, entonces veremos que la importación se hace como si se tratara de cualquier otra imagen (teniendo en cuenta que debemos estar logueados en Docker Hub, porque esta imagen es privada).
+
+```bash
+eth3rup@debian:~$ docker pull iesalisal/appflask
+Using default tag: latest
+latest: Pulling from iesalisal/appflask
+43f89b94cd7d: Pull complete 
+b132c322eb4a: Pull complete 
+b168825a7ee8: Pull complete 
+103f0a6688c3: Pull complete 
+61eb57fa7f24: Pull complete 
+dcf51077e7d4: Pull complete 
+Digest: sha256:18d17cba5d1b9d244d6ceab8394588427510ed394e74743cdddb347351518c90
+Status: Downloaded newer image for iesalisal/appflask:latest
+docker.io/iesalisal/appflask:latest
+```
+Si lo que buscamos es descargar una imagen de una versión concreta, en Docker Hub podemos consultar para una imagen todas las disponibles. Así, por ejemplo, si deseamos descargar la versión _edge_ de la imagen _alpine_, ejecutaríamos la siguiente orden:
+
+```bash
+eth3rup@debian:~$ docker image pull alpine:edge
+edge: Pulling from library/alpine
+b790c763077d: Pull complete 
+Digest: sha256:f2d1645cd73c7e54584dc225da0b5229d19223412d719669ebda764f41396853
+Status: Downloaded newer image for alpine:edge
+docker.io/library/alpine:edge
+```
+
+> **👉 A tener en cuenta...**
+>
+> Por defecto, Docker busca una imagen en el repositorio general ```library``` y en la versión ```latest```. Si queremos una imagen de un repositorio concreto en una versión concreta, deberemos indicarlo en la orden.
+
 #### Listar imágenes en Docker
 Para cre
 

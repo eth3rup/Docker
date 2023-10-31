@@ -4,48 +4,39 @@
 #### Introducción al uso de Docker
 
 ## Índice y Estructura Principal
-- [Punto 1](#Punto-1)
-- [Punto 2](#Punto-2)
-     * [Subapartado 2a](#sub-2a)
-       * [Sub 2a1](#sub-2a1)
-- [Uso de la ayuda en Docker](#Uso-de-la-ayuda-en-Docker)
-- [Componentes de Docker](#Componentes-de-Docker)
-     * [Información sobre Docker](#Información-sobre-Docker)
+- [Instalación de Docker en Debian](#instalación-de-docker-en-debian)
+- [Uso de la ayuda en Docker](#uso-de-la-ayuda-en-docker)
+- [Componentes de Docker](#componentes-de-docker)
+     * [Información sobre Docker](#información-sobre-docker)
+     * [Docker Hub](#docker-hub)
+     * [Información de las imágenes de Docker Hub](#información-de-las-imágenes-de-docker-hub)
+     * [Acceder a Docker desde terminal](#acceder-a-docker-hub-desde-terminal)
 - [Gestión de contenedores](#Gestión-de-contenedores)
-     * [Subapartado 2a](#sub-2a)
+     * [Crear contenedores](#crear-contenedores)
+     * [Listar contenedores](#listar-contenedores)
+     * [Mostrar información del contenedor](#mostrar-información-del-contenedor)
+     * [Mostrar uso de recursos del contenedor](#mostrar-uso-de-recursos-del-contenedor)
+     * [Detener un contenedor](#detener-un-contenedor)
+     * [Ejecutar un contenedor](#ejecutar-un-contenedor)
+     * [Eliminar un contenedor](#eliminar-un-contenedor)
+     * [Mover información](#mover-información)
+     * [Ejecutar un comando en un contenedor](#ejecutar-un-comando-en-un-contenedor)
 - [Gestión de imágenes](#Gestión-de-imágenes)
-
+     * [Generar una imagen en Docker](#generar-una-imagen-en-docker)
+       * [El archivo *Dockerfile*](#el-archivo-dockerfile)
+       * [El comando ``docker image build``](#el-comando-docker-image-build)
+       * [La caché de Docker](#la-caché-de-docker)
+     * [Exportar imágenes a Docker Hub](#exportar-imágenes-a-docker-hub)
+     * [Importar imágenes de Docker Hub](#importar-imágenes-de-docker-hub)
+     * [Listar imágenes en Docker](#listar-imágenes-en-docker)
+     * [Mostrar información de una imagen](#mostrar-información-de-una-imagen)
+     * [Eliminar una imagen](#eliminar-una-imagen)
+- []()
+     * []()
+- [Miscelánea](#miscelánea)
+     * [Purgar el sistema Docker](#purgar-el-sistema-docker)
         
      
-
-Punto 1
-===============================================================================================================================
-Texto.
-
-#### epigrafe A 2orden
-
-texto.
-
-#### epigrafe B 2orden
-
-texto con enlace '**compra**'.
-
-Ahora va código 
-
-```bash
-┌─[josecarlos@debian]─[/home/josecarlos/Desktop/Red]
-└──╼ #ifconfig wlan0
-wlan0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
-        inet 192.168.1.187  netmask 255.255.255.0  broadcast 192.168.1.255
-        inet6 fe80::1d28:6b2b:a941:5796  prefixlen 64  scopeid 0x20<link>
-        ether e4:70:b8:d3:93:5d  txqueuelen 1000  (Ethernet)
-        RX packets 6426576  bytes 9229384163 (8.5 GiB)
-        RX errors 0  dropped 5  overruns 0  frame 0
-        TX packets 1160899  bytes 162727829 (155.1 MiB)
-        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
-```
-y seguimos
-
 Instalación de Docker en Debian
 ===============================================================================================================================
 La instalación de Docker depende del sistema operativo sobre el que estemos trabajando. Además, para algunos sistemas existen diferentes métodos para hacer la instalación.
@@ -243,7 +234,7 @@ Además de la propia ayuda del sistema, en la [web oficial de Docker](https://do
 
 Componentes de Docker
 ===============================================================================================================================
-Texto.
+TEXTO PENDIENTE
 #### Información sobre Docker
 Hay dos comandos que nos dan información sobre Docker:
 
@@ -561,10 +552,10 @@ eth3rup@debian:~$ docker container inspect ab0b901e7e27
 
 ```
 
-Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-p``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos conocer la IP que tiene el contenedor en la red de Docker (hablaremos de ella más adelante), usaríamos la expresión ```-f '{{.NetworkSettings.IPAddress}}```:
+Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-p``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos conocer la IP que tiene el contenedor en la red de Docker (hablaremos de ella más adelante), usaríamos la expresión ```-f '{{.NetworkSettings.IPAddress}}'```:
 
 ```bash
-eth3rup@debian:~$ docker container inspect -f '{{.NetworkSettings.IPAddress}} ab0b901e7e27
+eth3rup@debian:~$ docker container inspect -f '{{.NetworkSettings.IPAddress}}' ab0b901e7e27
 172.17.0.2
 ```
 
@@ -1010,9 +1001,9 @@ Y, como podemos comprobar, ya la tenemos publicada en nuestro perfil de Docker H
 
 #### Importar imágenes de Docker Hub
 En el apartado [Crear contenedores](#crear-contenedores) vimos como la operación ```docker container run``` producía una importación de una imagen si no la teníamos disponible en nuestro Docker Engine.
-En cualquier caso, es posible importar una imagen sin necesidad de crear un contenedor que haga uso de ella. Para ello hacemos uso del comando ```docker imagen pull```, que tiene la siguiente sintaxis:
+En cualquier caso, es posible importar una imagen sin necesidad de crear un contenedor que haga uso de ella. Para ello hacemos uso del comando ```docker image pull```, que tiene la siguiente sintaxis:
 
-```docker imagen pull [OPCIONES] IMAGEN:TAG```
+```docker image pull [OPCIONES] IMAGEN:TAG```
 
 En el caso de que quisiéramos importar la imagen de la aplicación web en Flask que subimos anteriormente, lo haríamos así:
 
@@ -1057,10 +1048,140 @@ docker.io/library/alpine:edge
 > Por defecto, Docker busca una imagen en el repositorio general ```library``` y en la versión ```latest```. Si queremos una imagen de un repositorio concreto en una versión concreta, deberemos indicarlo en la orden.
 
 #### Listar imágenes en Docker
-Para cre
+Para listar las imágenes que tenemos descargadas en nuestro Docker Engine utilizamos del comando ```docker imagen list```, que tiene la siguiente sintaxis:
 
-#### Listar imágenes en Docker
-Para cre
+```docker image list [OPCIONES] IMAGEN:TAG```
+
+Así, si queremos ver todas nuestras imágenes, no aplicaríamos ningún "filtro":
+
+```bash
+eth3rup@debian:~$ docker image list
+REPOSITORY           TAG       IMAGE ID       CREATED          SIZE
+appflask             latest    4d6fcf77f8e8   3 hours ago       603MB
+iesalisal/appflask   latest    4d6fcf77f8e8   3 hours ago       603MB
+alpine               edge      23d4cb6bdebe   8 weeks ago      7.38MB
+```
+
+#### Mostrar información de una imagen
+Del mismo modo que podíamos [consultar la información de un contenedor](#mostrar-información-del-contenedor) con ```docker container inspect```, también podemos consultar la información de una imagen con el comando ```docker image inspect``` con la siguiente sintaxis:
+
+```docker image inspect [OPCIONES] IMAGEN [IMAGEN...]```
+
+En realidad, como se aprecia en la sintaxis, es posible consultar información de una o varias imágenes a la vez.
+
+Para referenciar a las imágenes, como nos pasaba con los contenedores, se puede utilizar su ID o su nombre, indistintamente.
+
+En nuestro caso, la ejecución del comando para la imagen ```appflask``` produciría la siguiente salida en formato JSON:
+```bash
+eth3rup@debian:~$ docker image inspect appflask
+[
+    {
+        "Id": "sha256:28aee5e55114320f616acc3b61914b1264a7b51fe55cea2bfb56b2ab4983333f",
+        "RepoTags": [
+            "appflask:latest"
+        ],
+        "RepoDigests": [],
+        "Parent": "",
+        "Comment": "buildkit.dockerfile.v0",
+        "Created": "2023-10-31T12:52:03.500648195+01:00",
+        "Container": "",
+        "ContainerConfig": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": null,
+            "Cmd": null,
+            "Image": "",
+            "Volumes": null,
+            "WorkingDir": "",
+            "Entrypoint": null,
+            "OnBuild": null,
+            "Labels": null
+        },
+        "DockerVersion": "",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "5000/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "DEBUG=True"
+            ],
+            "Cmd": [
+                "miapp.py"
+            ],
+            "ArgsEscaped": true,
+            "Image": "",
+            "Volumes": {
+                "/datos_miapp": {}
+            },
+            "WorkingDir": "/miapp",
+            "Entrypoint": [
+                "python"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "org.opencontainers.image.ref.name": "ubuntu",
+                "org.opencontainers.image.version": "22.04"
+            }
+...
+]
+
+```
+
+Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-p``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos conocer el volumen persistente que monta la imagen, usaríamos la expresión ```-f '{{.Config.Volumes}}'```:
+
+```bash
+eth3rup@debian:~$ docker image inspect -f '{{.Config.Volumes}}' appflask
+map[/datos_miapp:{}]
+```
+
+#### Eliminar una imagen
+Como nos pasaba con los contenedores, se puede dar el caso de que una imagen ya no resulte útil o no interese. Entonces podemos optar por eliminarla del Docker Engine con el comando ```docker image rm```, que tiene la siguiente sintaxis:
+
+```docker image rm [OPCIONES] IMAGEN [IMAGEN...]```
+
+Como en los casos anteriores, podremos eliminar una o varias imágenes a la vez usando el ID o su nombre, indistintamente.
+
+Si procedemos a eliminar una imagen que se está usando contenedor (esté o no en ejecución) obtendremos lo siguiente:
+
+```bash
+eth3rup@debian:~$ docker image rm appflask
+Error response from daemon: conflict: unable to remove repository reference "appflask" (must force) - container e7d0a615a147 is using its referenced image 4d6fcf77f8e8
+```
+
+En esta situación, tenemos dos opciones:
+a) Eliminar el contenedor y posteriormente la imagen.
+```bash
+eth3rup@debian:~$ docker container rm app1
+app1
+eth3rup@debian:~$ docker image rm appflask
+Untagged: appflask:latest
+Deleted: sha256:28aee5e55114320f616acc3b61914b1264a7b51fe55cea2bfb56b2ab4983333f
+```
+
+b) Forzar la eliminación de la imagen. El contenedor seguirá funcionando con normalidad.
+```bash
+eth3rup@debian:~$ docker image rm -f appflask
+Untagged: appflask:latest
+Deleted: sha256:28aee5e55114320f616acc3b61914b1264a7b51fe55cea2bfb56b2ab4983333f
+```
 
 
 Miscelánea

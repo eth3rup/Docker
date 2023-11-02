@@ -23,6 +23,7 @@
      * [Eliminar un contenedor](#eliminar-un-contenedor)
      * [Mover información](#mover-información)
      * [Ejecutar un comando en un contenedor](#ejecutar-un-comando-en-un-contenedor)
+     * [Conectar a la terminal de un contenedor](#conectar-a-la-terminal-de-un-contenedor)
 - [Gestión de imágenes](#Gestión-de-imágenes)
      * [Generar una imagen en Docker](#generar-una-imagen-en-docker)
        * [El archivo *Dockerfile*](#el-archivo-dockerfile)
@@ -38,12 +39,13 @@
      * [Listar volúmenes](#listar-volúmenes)
      * [Mostrar información de un volumen](#mostrar-información-de-un-volumen)
      * [Eliminar un volumen](#eliminar-un-volumen)
-- [Redes en Docker](#)
-     * []()
-     * []()
-     * []()
-     * []()
-
+- [Redes en Docker](#redes-en-docker)
+     * [Crear una red en Docker](#crear-una-red-en-docker)
+     * [Listar redes](#listar-redes)
+     * [Mostrar información de una red](#mostrar-información-de-una-red)
+     * [Conectar un contenedor a una red](#conectar-un-contenedor-a-una-red)
+     * [Desconectar un contenedor de una red](#desconectar-un-contenedor-de-una-red)
+     * [Eliminar una red en Docker](#eliminar-una-red-en-docker)
 - [Orquestación de contenedores](#orquestación-de-contenedores)
      * [Docker Compose](#docker-compose)
 
@@ -84,7 +86,7 @@ sudo usermod -aG docker ${USER}
 ```
 
 > **⚠ Importante:**
-> si has añadido tu usuario al grupo ```docker```, necesitarás reiniciar sesión para que apliquen los cambios.
+> Si has añadido tu usuario al grupo ```docker```, necesitarás reiniciar sesión para que apliquen los cambios.
 
 
 
@@ -621,7 +623,7 @@ eth3rup@debian:~$ docker container inspect ab0b901e7e27
 
 ```
 
-Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-p``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos conocer la IP que tiene el contenedor en la red de Docker (hablaremos de ella más adelante), usaríamos la expresión ```-f '{{.NetworkSettings.IPAddress}}'```:
+Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-f``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos conocer la IP que tiene el contenedor en la red de Docker (hablaremos de ella más adelante), usaríamos la expresión ```-f '{{.NetworkSettings.IPAddress}}'```:
 
 ```bash
 eth3rup@debian:~$ docker container inspect -f '{{.NetworkSettings.IPAddress}}' ab0b901e7e27
@@ -799,6 +801,32 @@ root@88c3ddffc5da:/usr/local/apache2#
 
 Esto permite acceder al contenedor y lanzar una consola, de forma que las órdenes que ejecutemos serán en su interior.
 Para salir de la consola simplemente usamos la orden ```exit```
+
+
+#### Conectar a la terminal de un contenedor
+Otra forma más ágil de conectar a la terminal de un **contenedor en ejecución** es a través de la orden ```docker container attach```, que tiene la siguiente sintaxis: 
+
+```docker container attach [OPCIONES] CONTENEDOR```
+
+Aquí tenemos un ejemplo:
+
+```bash
+eth3rup@debian:~$ docker run -dit --name ejemplo alpine
+aad5c393d98c4cef82f575151cf87c3f204008ec6c704a1974c6b0279c0cd273
+
+eth3rup@debian:~$ docker docker attach ejemplo
+/ # ls
+bin    etc    lib    mnt    proc   run    srv    tmp    var
+dev    home   media  opt    root   sbin   sys    usr
+```
+
+Para salir del contenedor sin detenerlo, se hace ``[Ctrl]+[P]`` y posteriormente ``[Ctrl]+[Q]``. Esto producirá la salida y nos devolverá a nuestra línea de comandos:
+
+```bash
+/ # read escape sequence
+eth3rup@debian:~$ 
+```
+
 
 Gestión de imágenes
 ===============================================================================================================================
@@ -1214,7 +1242,7 @@ eth3rup@debian:~$ docker image inspect appflask
 
 ```
 
-Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-p``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos conocer el volumen persistente que monta la imagen, usaríamos la expresión ```-f '{{.Config.Volumes}}'```:
+Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-f``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos conocer el volumen persistente que monta la imagen, usaríamos la expresión ```-f '{{.Config.Volumes}}'```:
 
 ```bash
 eth3rup@debian:~$ docker image inspect -f '{{.Config.Volumes}}' appflask
@@ -1325,6 +1353,235 @@ miwordpress-db
 >
 > La operación de eliminado de un volumen **no puede deshacerse**. Cuando se elimina un volumen, se pierde toda la información que aloja en su interior.
 
+Redes en Docker
+===============================================================================================================================
+Con la instalación de Docker se crean tres redes de manera predefinida:
+
+* Red ```bridge```, utiliza el interfaz ```docker0``` y la subred ```172.17.0.0/16```. Cuando creamos contenedores y exponemos sus puertos, por defecto, a través de DHCP los conecta a esta red. 
+
+* Red ```host```, que asimila la misma IP que nuestro equipo.
+
+* Red ```none```, que no asigna ninguna IP al contenedor, por lo que no es accesible a través de red. ünicamente dispone del interfaz _loopback_ para hablar consigo mismo.
+
+Estas tres redes están definidas por su **driver**, que es quien establece que sean de un tipo u otro. Es decir, tenemos tres tipos de driver:
+* _**bridge**_
+* _**host**_
+* _**none**_
+
+#### Crear una red en Docker
+Además de las redes predefinidas, es posible crear redes personalizadas. Se pueden crear de cualquiera de los tres tipos (según el driver que se elija), aunque lo más común es definir redes de tipo _**bridge**_
+
+Para crear un volumen hacemos uso del comando ```docker network create```, que tiene la siguiente sintaxis:
+
+```docker network create [OPCIONES] RED```
+
+Si no se establece ninguna opción, Docker crea una red tipo  _**bridge**_ que será una red independiente y no se solapará con la predefinida ni otras existentes: ```172.18.0.0/16```, ```172.19.0.0/16```,...
+
+```bash
+eth3rup@debian:~$ docker network create mired1
+a4aa408b62eb338a808da55efd86f97590ae112dac20b1d4b8002f262ea1fd5c
+```
+
+Si ahora consultamos las redes de nuestro equipo, veremos que aparece esta nueva red:
+
+```bash
+eth3rup@debian:~$ sudo ifconfig
+br-a4aa408b62eb: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.18.0.1  netmask 255.255.0.0  broadcast 172.18.255.255
+        ether 02:42:c8:06:12:cd  txqueuelen 0  (Ethernet)
+        RX packets 0  bytes 0 (0.0 B)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 0  bytes 0 (0.0 B)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+docker0: flags=4099<UP,BROADCAST,MULTICAST>  mtu 1500
+        inet 172.17.0.1  netmask 255.255.0.0  broadcast 172.17.255.255
+        inet6 fe80::42:8cff:fe09:b21  prefixlen 64  scopeid 0x20<link>
+        ether 02:42:8c:09:0b:21  txqueuelen 0  (Ethernet)
+        RX packets 10694  bytes 522013 (509.7 KiB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 15221  bytes 261798303 (249.6 MiB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+...
+```
+
+...como la red creada es de tipo _**bridge**_, aparece con el prefijo ```br```.
+
+Además, se puede ver que la red creada es independiente de la red _**bridge**_ predefinida, que aparece bajo el interfaz ```docker0```.
+
+#### Listar redes
+Si queremos conocer la relación de redes disponibles, utilizamos el comando ```docker network list```, que tiene la siguiente sintaxis:
+
+```docker network list [OPCIONES]```
+
+En nuestro caso...
+
+```bash
+eth3rup@debian:~$ docker network list
+NETWORK ID     NAME      DRIVER    SCOPE
+cbf3509aa90c   bridge    bridge    local
+ce2870c7e71b   host      host      local
+a4aa408b62eb   mired1    bridge    local
+d15815d2f0d7   none      null      local
+```
+...se puede ver como están las tres redes predefinidas y, además, la red ```mired1``` que hemos creado anteriormente.
+
+#### Mostrar información de una red
+Podemos consultar información de una red de forma similar a como hemos hecho con otros objetos de Docker. Haremos uso del comando ```docker network inspect```, que tiene esta sintaxis:
+
+```docker network inspect [OPCIONES] RED [RED...]```
+
+En realidad, como se aprecia en la sintaxis, es posible consultar información de una o varias redes a la vez.
+
+Para referenciar a las redes, como nos pasaba con los contenedores y las imágenes, se puede utilizar su ID o su nombre, indistintamente.
+
+En nuestro caso, la ejecución del comando para ver información de la red ```mired1``` produciría la siguiente salida en formato JSON:
+```bash
+eth3rup@debian:~$ docker network inspect mired1
+[
+    {
+        "Name": "mired1",
+        "Id": "a4aa408b62eb338a808da55efd86f97590ae112dac20b1d4b8002f262ea1fd5c",
+        "Created": "2023-11-02T19:32:26.104771011+01:00",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "172.18.0.0/16",
+                    "Gateway": "172.18.0.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {},
+        "Options": {},
+        "Labels": {}
+    }
+]
+```
+
+Este comando también permite filtrar la información para obtener sólo los datos que nos interesen haciendo uso del parámetro ```-f``` y de la ubicación del campo en la taxonomía del reporte JSON. Por ejemplo, si quisiéramos saber si está habilitada para IPv6, usaríamos la expresión ```-f '{{.EnableIPv6}}'```:
+
+```bash
+eth3rup@debian:~$ docker image inspect -f '{{.EnableIPv6}}' mired1
+false
+```
+
+#### Conectar un contenedor a una red
+Para conectar un contenedor a una red concreta (por ejemplo, a nuestra red ``mired1``) tenemos dos opciones:
+a) Establecerlo a la hora de correr el contenedor, usando el parámetro ```--network```.
+```bash
+eth3rup@debian:~$ docker container run -dit --name hostA --network mired1 alpine
+cfb8f27c5da9547b710c7f707818fb786ab7b31383bbc8cf71c7176027d4eae2
+eth3rup@debian:~$ docker container inspect hostA
+...
+           "Networks": {
+                "mired1": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": [
+                        "cfb8f27c5da9"
+                    ],
+                    "NetworkID": "a4aa408b62eb338a808da55efd86f97590ae112dac20b1d4b8002f262ea1fd5c",
+                    "EndpointID": "f49bf72d382d463206bc06f2eb97b5c44d3cfa9e5031f85474048101210b82b5",
+                    "Gateway": "172.18.0.1",
+                    "IPAddress": "172.18.0.2",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "02:42:ac:14:00:02",
+                    "DriverOpts": null
+                }
+...
+```
+b) Conectarlo a la red posteriormente, usando el comando ``docker network connect``.
+```bash
+eth3rup@debian:~$ docker container run -dit --name hostB alpine
+668814a2240e57335108ad74ec3045c8d572cdde9d359bd9a424948e4f6e6178
+eth3rup@debian:~$ docker network connect mired1 hostB
+eth3rup@debian:~$ docker container inspect hostB
+...
+            "Networks": {
+                "bridge": {
+                    "IPAMConfig": null,
+                    "Links": null,
+                    "Aliases": null,
+                    "NetworkID": "cbf3509aa90cd09da168e696c1bb6979cfcc460af0e35f52bc838740d1488126",
+                    "EndpointID": "530666b4a6451686d9f2f5377a93e0c111677737faa610987428cb539cd23caa",
+                    "Gateway": "172.17.0.1",
+                    "IPAddress": "172.17.0.2",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "02:42:ac:11:00:02",
+                    "DriverOpts": null
+                },
+                "mired1": {
+                    "IPAMConfig": {},
+                    "Links": null,
+                    "Aliases": [
+                        "668814a2240e"
+                    ],
+                    "NetworkID": "a4aa408b62eb338a808da55efd86f97590ae112dac20b1d4b8002f262ea1fd5c",
+                    "EndpointID": "4d60487c41c48f5e0ad93b94524b74c0c416dd913bd5b43502d563398e13ac03",
+                    "Gateway": "172.18.0.1",
+                    "IPAddress": "172.18.0.3",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "02:42:ac:14:00:03",
+                    "DriverOpts": {}
+                }
+
+...
+```
+
+> **👉 A tener en cuenta...**
+>
+> El contenedor ``hostB``, al crearlo, como no especificamos nada, lo asignó a la red predefinida de tipo _**bridge**_. En el siguiente punto veremos cómo podemos desvincularlo de esa red.
+
+
+Los dos contenedores (``hostA`` y ``hostB``) se encuentran ahora vinculados a la misma red (``mired``), por lo que están comunicados.
+
+Vamos a comprobarlo haciendo lanzando un ``ping``:
+
+```bash
+eth3rup@debian:~$ docker attach hostA
+/ # ping -c 3 hostB
+PING hostB (172.18.0.3): 56 data bytes
+64 bytes from 172.18.0.3: seq=0 ttl=64 time=0.383 ms
+64 bytes from 172.18.0.3: seq=1 ttl=64 time=0.154 ms
+64 bytes from 172.18.0.3: seq=2 ttl=64 time=0.148 ms
+
+--- hostB ping statistics ---
+3 packets transmitted, 3 packets received, 0% packet loss
+round-trip min/avg/max = 0.148/0.228/0.383 ms
+/ # 
+```
+
+> **👉 A tener en cuenta...**
+>
+> Podemos emplear los nombres de los contenedores en lugar de las direcciones IP porque Docker utiliza un servidor DNS configurado en cada contenedor, que le permite resolver el nombre del resto de contenedores que están en su misma red.
+
+
+
+#### Desconectar un contenedor de una red
+A
+
+#### Eliminar una red en Docker
+A
 
 
 Orquestación de contenedores

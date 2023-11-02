@@ -33,6 +33,17 @@
      * [Listar imágenes en Docker](#listar-imágenes-en-docker)
      * [Mostrar información de una imagen](#mostrar-información-de-una-imagen)
      * [Eliminar una imagen](#eliminar-una-imagen)
+- [Gestión de volúmenes](#gestión-de-volúmenes)
+     * [Crear un volumen](#crear-un-volumen)
+     * [Listar volúmenes](#listar-volúmenes)
+     * [Mostrar información de un volumen](#mostrar-información-de-un-volumen)
+     * [Eliminar un volumen](#eliminar-un-volumen)
+- [Redes en Docker](#)
+     * []()
+     * []()
+     * []()
+     * []()
+
 - [Orquestación de contenedores](#orquestación-de-contenedores)
      * [Docker Compose](#docker-compose)
 
@@ -1241,9 +1252,142 @@ Untagged: appflask:latest
 Deleted: sha256:28aee5e55114320f616acc3b61914b1264a7b51fe55cea2bfb56b2ab4983333f
 ```
 
+Gestión de volúmenes
+===============================================================================================================================
+Los contenedores funcionan, por defecto, como entidades aisladas, aunque sabemos que podemos exponer puertos del contenedor para comunicarlo con una red y también que podemos mover información al contenedor con los comandos ```COPY``` y ```ADD``` del archivo ```Dockerfile```.
+Sin embargo, esto no evita que cuando se elimine el contenedor también se eliminen los archivos que contiene.
+Si queremos utilizar información cuando trabajamos con contenedores que se mantenga independiente de éstos disponemos de dos opciones:
+* Montar directorios de nuestro host en el contenedor, que es lo que hemos venido haciendo hasta ahora.
+* Montar volúmenes, que son un objeto más en Docker, como los contenedores o las imágenes.
+Por regla general, utilizaremos los volúmenes para almacenar información que el contenedor pueda generar "de forma autónoma" (el ejemplo más claro son las bases de datos) y el montaje de directorios cuando el movimiento de información entre host y contenedor lo produzcamos nosotros de forma habitualmente manual (por ejemplo, código fuente de una aplicación que estemos desarrollando).
+
+#### Crear un volumen
+Para crear un volumen hacemos uso del comando ```docker volume create```, que tiene la siguiente sintaxis:
+
+```docker volume create [OPCIONES] [VOLUMEN]```
+
+Si quisiéramos crear un volumen para alojar la base de datos de un Wordpress, lo haríamos así:
+
+```bash
+eth3rup@debian:~$ docker volume create miwordpress-db
+miwordpress-db
+```
+
+#### Listar volúmenes
+Para tener la relación de volúmenes disponibles, utilizamos el comando ```docker volume list```, que tiene la siguiente sintaxis:
+
+```docker volume list [OPCIONES]```
+
+En nuestro caso...
+
+```bash
+eth3rup@debian:~$ docker volume list
+DRIVER    VOLUME NAME
+local     miwordpress-db
+```
+
+#### Mostrar información de un volumen
+Como sucedía con contenedores e imágenes, también vamos a poder consultar la información de un volumen. Esto lo haremos con el comando ```docker volume inspect``` que tiene la siguiente sintaxis:
+
+```docker volume inspect [OPCIONES] VOLUMEN [VOLUMEN...]```
+
+Como se aprecia en la sintaxis, es posible consultar información de uno o varios contenedores a la vez.
+
+En nuestro caso, la ejecución del comando para el volumen ```miwordpress-db``` produciría la siguiente salida en formato JSON:
+```bash
+eth3rup@debian:~$ docker volume inspect miwordpress-db
+[
+    {
+        "CreatedAt": "2023-11-02T18:46:14+01:00",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/miwordpress-db/_data",
+        "Name": "miwordpress-db",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+```
+
+#### Eliminar un volumen
+Cuando ya no necesitemos el volumen, podemos eliminarlo **siempre que no esté en uso** en un contenedor. El comando empleado es ```docker volume rm```, que tiene la siguiente sintaxis:
+
+```docker volume rm [OPCIONES] VOLUMEN [VOLUMEN]```
+
+En nuestro caso...
+
+```bash
+eth3rup@debian:~$ docker volume rm miwordpress-db
+miwordpress-db
+```
+
+> **⚠ Importante:**
+>
+> La operación de eliminado de un volumen **no puede deshacerse**. Cuando se elimina un volumen, se pierde toda la información que aloja en su interior.
+
+
 
 Orquestación de contenedores
 ===============================================================================================================================
+El uso de contenedores, como es visto, es extremadamente útil y flexible. Podemos definir una inmensa variedad de configuraciones de imágenes y contenedores. Sin embargo, hay un aspecto importante a tener en cuenta, y es que debemos establecer de antemano una configuración y, si esta cambia, ya nos serviría.
+
+Esto se ve muy claro con un sencillo ejemplo: imaginemos que queremos montar un entorno para un _Wordpress_. Neecesitaríamos...
+* Entorno de _Wordpress_.
+* Entorno de base de datos, por ejemplo, _MariaDB_.
+
+La forma más simple sería crear una única imagen en la que tengamos _Wordpress+MariaDB_. Pero, ¿qué problema nos genera este planteamiento? De todos, el principal es que cualquier cambio en uno de los dos entornos implicaría una modificación en la versión. Por este motivo, los paradigmas actuales tienen al uso de _**microservicios**_.
+
+Si adoptamos un modelo de microservicios, los entornos de Wordpress y MariaDB irían separados. De esta manera, un cambio en uno de ellos no afectaría al otro. Como vemos, Docker es una magnífica herramienta para implementar el modelo de microservicios. Además, disponemos de imágenes oficiales tanto de _Wordpress_ como de _MariaDB_, por lo que la implementación no debería generar mucha complicación.
+
+Sin embargo, vemos que este modelo, si tenemos que construirlo manualmente, implica una considerable carga de trabajo, ya que tendríamos que...
+* Levantar un contenedor para _Wordpress_.
+* Levantar un contenedor para _MariaDB_.
+* Vincular ambos contenedores (para que _Wordpress_ pueda hacer uso de _MariaDB_).
+
+...y es precisamente aquí donde entra el concepto de la _**orquestación**_, que no es más que el planteamiento de automatizar la generación de escenarios de contenedores.
 
 #### Docker Compose
-a 
+La principal herramienta para la orquestación de contenedores se llama ```Docker Compose```.
+Esta herramienta funciona en todos los entornos y dispone de una nutrida variedad de comandos para gestionar prácticamente la totalidad de escenarios en Docker.
+La forma de funcionamiento de ```docker compose``` es muy similar a la que tenía ```docker build```. En este caso, la base será un archivo llamado ```docker-compose.yml``` (en formato YAML).
+
+
+> **👉 A tener en cuenta...**
+>
+> Tanto ```docker build``` como  ```docker compose``` tienen unos archivos por defecto (```Dockerfile``` para el primer caso y ```docker-compose.yml``` para el segundo). Sin embargo, pueden asignarse otros nombres a los archivos e indicarlo después en la orden con el parámetro ```-f``` para que vaya a ese fichero en lugar al que tiene asignado por defecto.
+
+
+En la ayuda oficial de Docker está recogida [toda la información sobre la sintaxis del dichero ```docker-compose.yml```](https://docs.docker.com/compose/compose-file/03-compose-file/).
+
+Para nuestro propósito, al igual que hicimos para el archivo ```Dockerfile``` vamos a partir de un ejemplo en el que utilizaremos el escenario que hemos introducido de _Wordpress_. Para ello, una primera aproximación del archivo ```docker-compose.yml``` sería esta:
+
+```bash
+version: '3'
+
+services:
+    db:
+        image: mariadb:11.0
+        volumes:
+            - data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=pass.de.root
+            - MYSQL_DATABASE=wordpress
+            - MYSQL_USER=manager
+            - MYSQL_PASSWORD=pass.de.manager
+    web:
+        image: wordpress:6.3.2
+        depends_on:
+            - db
+        volumes:
+            - ./wp:/var/www/html
+        environment:
+            - WORDPRESS_DB_USER=manager
+            - WORDPRESS_DB_PASSWORD=pass.de.manager
+            - WORDPRESS_DB_HOST=db
+        ports:
+            - 8080:80
+
+volumes:
+    data:
+```
+

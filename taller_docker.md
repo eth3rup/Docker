@@ -1659,6 +1659,9 @@ Sin embargo, vemos que este modelo, si tenemos que construirlo manualmente, impl
 #### Docker Compose
 La principal herramienta para la orquestación de contenedores se llama ```Docker Compose```.
 Esta herramienta funciona en todos los entornos y dispone de una nutrida variedad de comandos para gestionar prácticamente la totalidad de escenarios en Docker.
+
+##### El archivo docker-compose.yml
+
 La forma de funcionamiento de ```docker compose``` es muy similar a la que tenía ```docker build```. En este caso, la base será un archivo llamado ```docker-compose.yml``` (en formato YAML).
 
 
@@ -1679,7 +1682,7 @@ Existen dos secciones "avanzadas" (_**configs**_ y _**secrets**_) a partir de la
 
 Para nuestro propósito, al igual que hicimos para el archivo ```Dockerfile``` vamos a partir de un ejemplo en el que utilizaremos el escenario que hemos introducido de _Wordpress_. Para ello, una primera aproximación muy simple del archivo ```docker-compose.yml``` sería esta:
 
-```bash
+```yaml
 version: '3.1'
 
 services:
@@ -1692,6 +1695,8 @@ services:
             - MYSQL_DATABASE=wordpress
             - MYSQL_USER=manager
             - MYSQL_PASSWORD=pass.de.manager
+        networks:
+            - lan1
     web:
         image: wordpress:6.3.2
         depends_on:
@@ -1702,25 +1707,37 @@ services:
             - WORDPRESS_DB_USER=manager
             - WORDPRESS_DB_PASSWORD=pass.de.manager
             - WORDPRESS_DB_HOST=db
+        networks:
+            - lan1
         ports:
             - 8080:80
-
+networks:
+    lan1:
+        driver: bridge
 volumes:
     data:
 ```
 
-A continuación comentamos la finalidad de cada una de las líneas del archivo _**docker-compose.yml**_
 
-* ``version: '3.1'``
+A continuación comentamos la finalidad de cada una de las líneas del archivo _**docker-compose.yml**_:
+
+```yaml
+version: '3.1'
+```
 Hace alusión a la versión de la especificación de Docker Compose que vamos a utilizar. Aunque no es necesario, la añadimos porque facilita mucho el trabajo a la hora de hacer modificaciones ya que, como vimos, la versión conlleva cambios.
 
-* Sección ``services``
+```yaml
+services:
+    db:
+    ...
+    web:
+    ...
+```
 Recoge los dos entornos que vamos a necesitar: el de base de datos (que llamamos ``db``) y el de Wordpress (que llamamos ``web``).
 
-    * Entorno de base de datos:
-    aaa
-```bash
 
+```yaml
+    db:
         image: mariadb:11.0
         volumes:
             - data:/var/lib/mysql
@@ -1729,11 +1746,16 @@ Recoge los dos entornos que vamos a necesitar: el de base de datos (que llamamos
             - MYSQL_DATABASE=wordpress
             - MYSQL_USER=manager
             - MYSQL_PASSWORD=pass.de.manager
+        networks:
+            - lan1
 ```
-    aaa
-    * Entorno de Wordpress:
-    aaa
-```bash
+ 
+**image:** especifica la imagen de Docker que se utilizará.
+**volumes:** monta el volumen ``data`` para almacenar los datos de ``mysql``. Como veremos más adelante, ese volumen está definido como objeto Docker, así que será un volumen persistente.
+**environment:** genera las variables de entorno que se necesitarán para configurar la base de datos.
+**networks:** asigna al contenedor la red ``lan1``.  
+
+```yaml
     web:
         image: wordpress:6.3.2
         depends_on:
@@ -1746,6 +1768,147 @@ Recoge los dos entornos que vamos a necesitar: el de base de datos (que llamamos
             - WORDPRESS_DB_HOST=db
         ports:
             - 8080:80
+        networks:
+            - lan1
 ```
-    aaa
 
+**image:** especifica la imagen de Docker que se utilizará.
+**depends on:** establece que el contenedor dependa de otro, de forma que éste no pueda iniciarse hasta que aquel del que dependa no lo esté. En nuestro caso, nos asegura que Wordpress no se inicie hasta que la base de datos esté operativa.
+**volumes:** monta el directorio ``./wp`` para comunicar con ``/var/www/html``. Cuando hablamos de volúmenes, mencionamos que para el intercambio de código fuente suele preferirse un montaje sobre directorio a crear un volumen persistente.
+**environment:** genera las variables de entorno que se necesitarán para configurar WordPress.
+**ports**: mapea el puerto 80 del contenedor con el puerto 8080 de nuestro host.
+**networks:** asigna al contenedor la red ``lan1``. De esta manera, los dos contenedores estarán en la misma red. 
+
+```yaml
+networks:
+    lan1:
+        driver: bridge
+```
+
+Crea una red de tipo _bridge_ con el nombre ``lan1``. Esta red será la que utilizarán los dos contenedores para comunicarse.
+
+```yaml
+volumes:
+    data:
+```
+
+Crea el volumen persistente ``data`` el cual, como vemos, utilizará el contenedor ``db`` para alojar la base de datos.
+
+##### Los comandos de Docker Compose
+
+Como se puede consultar en la [ayuda de Docker Compose](https://docs.docker.com/compose/reference/), existe una amplia variedad de comandos para operar sobre los objetos recogidos en la orquestación definida en nuestro docker-compose.yml
+
+###### Levantar el escenario
+
+La operación principal en Docker Compose es levantar el escenario que hemos definido en el archivo de configuración. Para eso utilizamos el comando ```docker compose up```. Lo recomendable es utilizar también el parámetro ``-d``, ya que así lo ejecutamos sin que nuestra terminal quede vinculado y podemos seguir operando con ella.
+
+Vamos a lanzar nuestro escenario de Wordpress:
+
+```bash
+eth3rup@debian:~$ docker compose up -d
++] Running 31/2
+ ✔ web 21 layers [⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿]      0B/0B      Pulled          102.7s 
+ ✔ db 8 layers [⣿⣿⣿⣿⣿⣿⣿⣿]      0B/0B      Pulled                          96.5s 
+[+] Running 4/4
+ ✔ Network eth3rup_lan1     Created                                     1.1s 
+ ✔ Volume "eth3rup_data"    Created                                     0.1s 
+ ✔ Container eth3rup-db-1   Created                                     1.4s 
+ ✔ Container eth3rup-web-1  Created                                     0.1s 
+Attaching to eth3rup-db-1, eth3rup-web-1
+eth3rup-db-1   | 2023-11-03 16:51:56+00:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:11.0.3+maria~ubu2204 started.
+eth3rup-db-1   | 2023-11-03 16:51:57+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+eth3rup-web-1  | WordPress not found in /var/www/html - copying now...
+eth3rup-db-1   | 2023-11-03 16:51:57+00:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:11.0.3+maria~ubu2204 started.
+eth3rup-db-1   | 2023-11-03 16:51:58+00:00 [Note] [Entrypoint]: Initializing database files
+eth3rup-web-1  | Complete! WordPress has been successfully copied to /var/www/html
+eth3rup-web-1  | No 'wp-config.php' found in /var/www/html, but 'WORDPRESS_...' variables supplied; copying 'wp-config-docker.php' (WORDPRESS_DB_HOST WORDPRESS_DB_PASSWORD WORDPRESS_DB_USER)
+eth3rup-web-1  | AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.19.0.3. Set the 'ServerName' directive globally to suppress this message
+eth3rup-web-1  | AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.19.0.3. Set the 'ServerName' directive globally to suppress this message
+eth3rup-web-1  | [Fri Nov 03 16:52:01.786372 2023] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.56 (Debian) PHP/8.0.30 configured -- resuming normal operations
+eth3rup-web-1  | [Fri Nov 03 16:52:01.786797 2023] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'
+eth3rup-db-1   | 
+...
+```
+Una vez finalizado el despliegue, podemos comprobar que todos los objetos definidos en nuestro docker-compose.yml han sido creados y los contenedores están en ejecución:
+
+```bash
+eth3rup@debian:~$ docker network list
+NETWORK ID     NAME              DRIVER    SCOPE
+5dce7c28d72a   bridge            bridge    local
+ce2870c7e71b   host              host      local
+28bc6c3d411b   eth3rup_lan1      bridge    local
+a4aa408b62eb   mired1            bridge    local
+d15815d2f0d7   none              null      local
+
+eth3rup@debian:~$ docker volume list
+DRIVER    VOLUME NAME
+local     eth3rup_data
+
+eth3rup@debian:~$ docker container list
+CONTAINER ID   IMAGE             COMMAND                  CREATED              STATUS              PORTS                                   NAMES
+b19cf2a496ae   wordpress:6.3.2   "docker-entrypoint.s…"   About a minute ago   Up About a minute   0.0.0.0:8080->80/tcp, :::8080->80/tcp   eth3rup-web-1
+6e2583294181   mariadb:11.0      "docker-entrypoint.s…"   About a minute ago   Up About a minute   3306/tcp                                eth3rup-db-1
+```
+
+Si accedemos a la IP asignada al contenedor de WordPress, tendremos ya levantado el servicio, listo para los primeros pasos de su instalación.
+
+[![mg06-wp.png](https://i.postimg.cc/fb1wHcC8/mg06-wp.png)](https://postimg.cc/jWQ02JGf)
+
+Si se detuviera Docker, al volver a iniciarlo nos encontraríamos con que los contenedores no se inician automáticamente. Para volver a levantarlos, utilizaríamos de nuevo la orden ``docker compose up -d``.
+
+```bash
+eth3rup@debian:~$ docker compose up -d
+[+] Running 2/2
+ ✔ Container eth3rup-db-1   Started                                                                                                     0.3s 
+ ✔ Container eth3rup-web-1  Started                                                                                                     0.2s
+```
+
+Para no tener que preocuparse por esto, se puede definir en el archivo de configuración de los contenedores que se quieran "auto-levantar" la línea
+
+```restart: allways```
+
+Otra cuestión importante que vemos a la hora de levantar el escenario es que a los nombres de los contenedores, redes y volúmenes que hemos establecido en el archivo de configuración se **les ha añadido el prefijo del directorio de trabajo** (es decir, nuestro contexto). Esto es así porque cada proyecto tiene su propio espacio de nombres para servicios, volúmenes y redes, lo que evita la colisión de nombres.
+
+Si deseamos forzar a usar un nombre sin que tenga este prefijo, debemos especificarlo en el archivo de configuración. Así, para nuestro ejemplo, quedaría como se muestra a continuación:
+
+```yaml
+version: '3.1'
+
+services:
+    db:
+        image: mariadb:11.0
+        container_name: midb
+        restart: allways
+        volumes:
+            - data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=pass.de.root
+            - MYSQL_DATABASE=wordpress
+            - MYSQL_USER=manager
+            - MYSQL_PASSWORD=pass.de.manager
+        networks:
+            - lan1
+    web:
+        image: wordpress:6.3.2
+        container_name: miwp
+        restart: allways
+        depends_on:
+            - db
+        volumes:
+            - ./wp:/var/www/html
+        environment:
+            - WORDPRESS_DB_USER=manager
+            - WORDPRESS_DB_PASSWORD=pass.de.manager
+            - WORDPRESS_DB_HOST=db
+        networks:
+            - lan1
+        ports:
+            - 8080:80
+networks:
+    lan1:
+        driver: bridge
+        name: lan1
+volumes:
+    data:
+        name: data
+```

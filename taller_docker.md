@@ -1504,7 +1504,12 @@ eth3rup@debian:~$ docker container inspect hostA
                 }
 ...
 ```
-b) Conectarlo a la red posteriormente, usando el comando ``docker network connect``.
+b) Conectarlo a la red posteriormente, usando el comando ``docker network connect``. En este caso, la sintaxis del comando es la siguiente:
+
+``docker network connect [OPCIONES] RED CONTENEDOR``
+
+Para nuestro caso, sería así: 
+
 ```bash
 eth3rup@debian:~$ docker container run -dit --name hostB alpine
 668814a2240e57335108ad74ec3045c8d572cdde9d359bd9a424948e4f6e6178
@@ -1578,10 +1583,58 @@ round-trip min/avg/max = 0.148/0.228/0.383 ms
 
 
 #### Desconectar un contenedor de una red
-A
+Al igual que podemos conectar un contenedor a una red, también podemos desconectarlo. Esto lo hacemos con el comando ```docker network disconnect```, que tiene la siguiente sintaxis:
+
+```docker network disconnect [OPCIONES] RED CONTENEDOR```
+
+Así, si quisiéramos desconectar nuestro contenedor ``hostB`` de la red ``bridge`` predefinida, haríamos lo siguiente:
+
+```bash
+eth3rup@debian:~$ docker network disconnect bridge hostB
+eth3rup@debian:~$ docker container inspect hostB
+...
+            "Networks": {
+                "mired1": {
+                    "IPAMConfig": {},
+                    "Links": null,
+                    "Aliases": [
+                        "668814a2240e"
+                    ],
+                    "NetworkID": "a4aa408b62eb338a808da55efd86f97590ae112dac20b1d4b8002f262ea1fd5c",
+                    "EndpointID": "4d60487c41c48f5e0ad93b94524b74c0c416dd913bd5b43502d563398e13ac03",
+                    "Gateway": "172.18.0.1",
+                    "IPAddress": "172.18.0.3",
+                    "IPPrefixLen": 16,
+                    "IPv6Gateway": "",
+                    "GlobalIPv6Address": "",
+                    "GlobalIPv6PrefixLen": 0,
+                    "MacAddress": "02:42:ac:14:00:03",
+                    "DriverOpts": {}
+                }
+
+...
+```
 
 #### Eliminar una red en Docker
-A
+Como sucedía con los volúmenes, podemos eliminar un red **siempre que no esté en uso** por uno o más contenedores. El comando empleado es ```docker network rm```, que tiene la siguiente sintaxis:
+
+```docker volume rm RED [RED]```
+
+Si queremos eliminar la red ``mired1``, que está siendo usada por los contenedores ``hostA`` y ``hostB``...
+
+```bash
+eth3rup@debian:~$ docker network rm mired1
+Error response from daemon: error while removing network: network mired1 id a4aa408b62eb338a808da55efd86f97590ae112dac20b1d4b8002f262ea1fd5c has active endpoints
+```
+
+Si tuviéramos una red ``mired2`` que no estuviera usada, podríamos eliminarla sin problemas:
+
+```bash
+eth3rup@debian:~$ docker network rm mired2
+mired2
+```
+
+
 
 
 Orquestación de contenedores
@@ -1616,10 +1669,18 @@ La forma de funcionamiento de ```docker compose``` es muy similar a la que tení
 
 En la ayuda oficial de Docker está recogida [toda la información sobre la sintaxis del dichero ```docker-compose.yml```](https://docs.docker.com/compose/compose-file/03-compose-file/).
 
-Para nuestro propósito, al igual que hicimos para el archivo ```Dockerfile``` vamos a partir de un ejemplo en el que utilizaremos el escenario que hemos introducido de _Wordpress_. Para ello, una primera aproximación del archivo ```docker-compose.yml``` sería esta:
+El archivo ```docker-compose.yml``` se organiza esencialmente en las siguientes secciones:
+* _**Versión**_ (opcional).
+* _**Servicios**_ (obligatoria).
+* _**Volúmenes**_ (opcional).
+* _**Redes**_ (opcional). 
+
+Existen dos secciones "avanzadas" (_**configs**_ y _**secrets**_) a partir de la versión 3.1, que también son opcionales.
+
+Para nuestro propósito, al igual que hicimos para el archivo ```Dockerfile``` vamos a partir de un ejemplo en el que utilizaremos el escenario que hemos introducido de _Wordpress_. Para ello, una primera aproximación muy simple del archivo ```docker-compose.yml``` sería esta:
 
 ```bash
-version: '3'
+version: '3.1'
 
 services:
     db:
@@ -1647,4 +1708,44 @@ services:
 volumes:
     data:
 ```
+
+A continuación comentamos la finalidad de cada una de las líneas del archivo _**docker-compose.yml**_
+
+* ``version: '3.1'``
+Hace alusión a la versión de la especificación de Docker Compose que vamos a utilizar. Aunque no es necesario, la añadimos porque facilita mucho el trabajo a la hora de hacer modificaciones ya que, como vimos, la versión conlleva cambios.
+
+* Sección ``services``
+Recoge los dos entornos que vamos a necesitar: el de base de datos (que llamamos ``db``) y el de Wordpress (que llamamos ``web``).
+
+    * Entorno de base de datos:
+    aaa
+```bash
+
+        image: mariadb:11.0
+        volumes:
+            - data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=pass.de.root
+            - MYSQL_DATABASE=wordpress
+            - MYSQL_USER=manager
+            - MYSQL_PASSWORD=pass.de.manager
+```
+    aaa
+    * Entorno de Wordpress:
+    aaa
+```bash
+    web:
+        image: wordpress:6.3.2
+        depends_on:
+            - db
+        volumes:
+            - ./wp:/var/www/html
+        environment:
+            - WORDPRESS_DB_USER=manager
+            - WORDPRESS_DB_PASSWORD=pass.de.manager
+            - WORDPRESS_DB_HOST=db
+        ports:
+            - 8080:80
+```
+    aaa
 

@@ -1763,8 +1763,11 @@ Recoge los dos entornos que vamos a necesitar: el de base de datos (que llamamos
 ```
  
 **image:** especifica la imagen de Docker que se utilizará.
+
 **volumes:** monta el volumen ``data`` para almacenar los datos de ``mysql``. Como veremos más adelante, ese volumen está definido como objeto Docker, así que será un volumen persistente.
+
 **environment:** genera las variables de entorno que se necesitarán para configurar la base de datos.
+
 **networks:** asigna al contenedor la red ``lan1``.  
 
 ```yaml

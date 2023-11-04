@@ -382,6 +382,7 @@ En Docker Hub existen, en general, dos tipos de imágenes:
 - **Imágenes privadas:** sólo están disponibles para el propietario. Para acceder a estas imágenes desde nuestro Docker necesitaremos estar logueados en Docker Hub (ver el apartado [Acceder a Docker Hub desde terminal](#acceder-a-docker-hub-desde-terminal) )
 - **Imágenes públicas:** están disponibles para todos los usuarios de Docker Hub.
    - **Imágenes oficiales de Docker:** forman parte de repositorios básicos esenciales que sirven como punto de partida para la mayoría de los usuarios. Estas imágenes están etiquetadas con la siguiente imagen:
+
    ![Docker Official Image](https://docs.docker.com/trusted-content/images/official-image-badge-iso.png)
    - **Imágenes no oficiales:** son el resto de las imágenes. Cabe destacar que Docker ha incluido una categoría de "contenido verificado" en la que incluye, además de las imágenes oficiales, las de publicadores verificados y las de contenido Open Source esponsorizado por Docker.
 
@@ -1784,10 +1785,15 @@ Recoge los dos entornos que vamos a necesitar: el de base de datos (que llamamos
 ```
 
 **image:** especifica la imagen de Docker que se utilizará.
+
 **depends on:** establece que el contenedor dependa de otro, de forma que éste no pueda iniciarse hasta que aquel del que dependa no lo esté. En nuestro caso, nos asegura que Wordpress no se inicie hasta que la base de datos esté operativa.
+
 **volumes:** monta el directorio ``./wp`` para comunicar con ``/var/www/html``. Cuando hablamos de volúmenes, mencionamos que para el intercambio de código fuente suele preferirse un montaje sobre directorio a crear un volumen persistente.
+
 **environment:** genera las variables de entorno que se necesitarán para configurar WordPress.
+
 **ports**: mapea el puerto 80 del contenedor con el puerto 8080 de nuestro host.
+
 **networks:** asigna al contenedor la red ``lan1``. De esta manera, los dos contenedores estarán en la misma red. 
 
 ```yaml

@@ -52,11 +52,9 @@
         * [Los comandos de Docker Compose](#los-comandos-de-docker-compose)
             * [Levantar el escenario](#levantar-el-escenario)
             * [Detener el escenario](#detener-el-escenario)
-            * [Iniciar el escenario](#iniciar-el-escenario)
-            * [Actualizar las imágenes del escenario](#actualizar-las-imágenes-del-escenario)
-            * [Reconstruir las imágenes del escenario](#reconstruir-las-imágenes-del-escenario)            
+            * [Iniciar el escenario](#iniciar-el-escenario)     
             * [Eliminar el escenario](#eliminar-el-escenario)
-
+        * [Optimización de las variables de entorno]()
 
 Instalación de Docker en Debian
 ===============================================================================================================================
@@ -1289,11 +1287,14 @@ Deleted: sha256:28aee5e55114320f616acc3b61914b1264a7b51fe55cea2bfb56b2ab4983333f
 Gestión de volúmenes
 ===============================================================================================================================
 Los contenedores funcionan, por defecto, como entidades aisladas, aunque sabemos que podemos exponer puertos del contenedor para comunicarlo con una red y también que podemos mover información al contenedor con los comandos ```COPY``` y ```ADD``` del archivo ```Dockerfile```.
+
 Sin embargo, esto no evita que cuando se elimine el contenedor también se eliminen los archivos que contiene.
+
 Si queremos utilizar información cuando trabajamos con contenedores que se mantenga independiente de éstos disponemos de dos opciones:
-* Montar directorios de nuestro host en el contenedor, que es lo que hemos venido haciendo hasta ahora.
-* Montar volúmenes, que son un objeto más en Docker, como los contenedores o las imágenes.
-Por regla general, utilizaremos los volúmenes para almacenar información que el contenedor pueda generar "de forma autónoma" (el ejemplo más claro son las bases de datos) y el montaje de directorios cuando el movimiento de información entre host y contenedor lo produzcamos nosotros de forma habitualmente manual (por ejemplo, código fuente de una aplicación que estemos desarrollando).
+* **Volúmenes de host:** consiste en montar directorios de nuestro host en el contenedor, que es lo que hemos venido haciendo hasta ahora.
+* **Volúmenes de datos:** actúan como una "unidad de disco" (volumen) al que pueden acceder varios contenedores. Son un objeto más en Docker, como los contenedores o las imágenes.
+
+Por regla general, utilizaremos los volúmenes de datos para almacenar información que el contenedor pueda generar "de forma autónoma" (el ejemplo más claro son las bases de datos) y volúmenes de host cuando el movimiento de información entre host y contenedor lo produzcamos nosotros de forma habitualmente manual (por ejemplo, código fuente de una aplicación que estemos desarrollando).
 
 #### Crear un volumen
 Para crear un volumen hacemos uso del comando ```docker volume create```, que tiene la siguiente sintaxis:
@@ -1875,7 +1876,7 @@ eth3rup@debian:~$ docker compose up -d
 
 Para no tener que preocuparse por esto, se puede definir en el archivo de configuración de los contenedores que se quieran "auto-levantar" la línea
 
-```restart: allways```
+```restart: always```
 
 Si volviésemos a ejecutar la orden ``docker compose up -d`` nos encontraríamos con el siguiente resultado:
 
@@ -1899,7 +1900,7 @@ services:
     db:
         image: mariadb:11.0
         container_name: midb
-        restart: allways
+        restart: always
         volumes:
             - data:/var/lib/mysql
         environment:
@@ -1912,7 +1913,7 @@ services:
     web:
         image: wordpress:6.3.2
         container_name: miwp
-        restart: allways
+        restart: always
         depends_on:
             - db
         volumes:
@@ -1933,6 +1934,20 @@ volumes:
     data:
         name: data
 ```
+Si volvemos a ejecutar ``docker compose up -d`` de este escenario "optimizado" obtendríamos lo siguiente:
+
+```bash
+eth3rup@debian:~$ docker compose up -d
+[+] Running 6/6
+ ✔ Network lan1               Created                                                                                                      2.2s 
+ ✔ Volume "data"              Created                                                                                                      0.0s
+ ✔ Container eth3rup-db-1   Recreated                                                                                                   5.8s 
+ ✔ Container eth3rup-web-1  Recreated                                                                                                   2.4s 
+ ✔ Container midb              Started                                                                                                     3.1s 
+ ✔ Container miwp              Started                                                                                                     1.8s
+```
+
+Al consultar los objetos, veremos que ha generado una red nueva ``lan1`` y un volumen nuevo ``data``, y también que ha eliminado los contenedores originales para crear los contenedores con los nombres ``midb`` y ``miwp``. Como el servicio de WordPress estaba montado en un volumen no persistente, al eliminar el contenedor se ha eliminado la información asociada, por lo que deberemos volver a hacer una instalación nueva de WordPress.
 
 ###### Detener el escenario
 Si necesitamos detener todos los servicios (contenedores) que forman parte del escenario definido en ``docker-compose.yml`` podemos hacerlo a través del comando ``docker compose stop``, que tiene la siguiente sintaxis:
@@ -1945,8 +1960,8 @@ Para nuestro caso, sería así...
 ```bash
 eth3rup@debian:~$ docker compose stop
 [+] Stopping 2/2
- ✔ Container eth3rup-web-1   Stopped                                                                                                     3.9s 
- ✔ Container eth3rup-db-1  Stopped                                                                                                     1.9s
+ ✔ Container miwp   Stopped                                                                                                     3.9s 
+ ✔ Container midb   Stopped                                                                                                     1.9s
 ```
 
 Como se aprecia en la sintaxis del comando, también habría sido posible detener servicios de forma selectiva. Esto es especialmente útil cuando el escenario está compuesto por un número considerable de servicios y no queremos detenerlos todos. En este sentido, el comando ``docker compose stop [SERVICIO]`` podría pensarse que es equivalente al comando ``docker container stop [CONTENEDOR]``. Sin embargo, hay un matiz importante, y es que **``docker compose stop [SERVICIO]`` nos garantiza que la parada se hará de forma coherente y ajustada a las configuraciones definidas en el archivo de configuración.** Así, en nuestro caso, puesto que el servicio web depende del servicio de base de datos, los detendrá en orden: primero el servicio web y después el de base de datos. Este orden es el inverso al que se utilizó en la creación; eso es, el inverso al definido en el ``docker-compose.yml``.
@@ -1964,8 +1979,8 @@ Para nuestro caso, sería así...
 ```bash
 eth3rup@debian:~$ docker compose start
 [+] Stopping 2/2
- ✔ Container eth3rup-db-1   Started                                                                                                     3.9s 
- ✔ Container eth3rup-web-1  Started                                                                                                     1.9s
+ ✔ Container midb   Started                                                                                                     3.9s 
+ ✔ Container miwp   Started                                                                                                     1.9s
 ```
 
 > **👉 A tener en cuenta...**
@@ -1973,7 +1988,137 @@ eth3rup@debian:~$ docker compose start
 > El comando ```docker compose start``` funciona para servicios definidos en el archivo de configuración que han sido previamente parados (ya sea "accidentalmente" o mediante la orden  ```docker compose stop```). Es decir, los contenedores deben existir. De no ser así, la orden a utilizar debería ser ``docker compose up``.
 
 Al igual que comentamos en el apartado anterior, podría pensarse en una equivalencia entre los comandos ``docker compose start [SERVICIO]`` y ``docker container start [CONTENEDOR]``. Sin embargo, el uso de **``docker compose start [SERVICIO]`` nos garantiza que el arranque se hará de forma coherente y ajustada a las configuraciones definidas en el archivo de configuración.**
+ 
+###### Eliminar el escenario
+Cuando ya no necesitemos el escenario, podemos eliminarlo haciendo uso del comando ``docker compose down``. Este comando se encargará de detener los servicios para eliminarlos si éstos estuvieran en ejecución, como se puede ver a continuación:
 
-###### Actualizar las imágenes del escenario 
-###### Reconstruir las imágenes del escenario   
-###### Eliminar el escenario 
+```bash
+eth3rup@debian:~$ docker compose down
+[+] Running 3/3
+ ✔ Container miwp  Removed                                                                                                                 1.6s 
+ ✔ Container midb  Removed                                                                                                                 0.7s 
+ ✔ Network lan1    Removed                                                                                                                 0.5s
+ ```
+
+Si se diera el caso de querer eliminar también los volúmenes persistentes definidos en el archivo de configuración, se deberá ejecutar el comando con el parámetro ``-v``.
+
+```bash
+eth3rup@debian:~$ docker compose down -v
+[+] Running 4/4
+ ✔ Container miwp  Removed                                                                                                                 1.5s 
+ ✔ Container midb  Removed                                                                                                                 0.7s 
+ ✔ Volume data     Removed                                                                                                                 0.0s 
+ ✔ Network lan1    Removed                                                                                                                 0.5s
+ ```
+
+Si sólo queremos eliminar los servicios (contenedores) de nuestro escenario, manteniendo el resto, usaríamos el comando ``docker compose rm``. En realidad el comando elimina los servicios detenidos, por lo que si tenemos servicios activos, tendremos que forzar su parada previa con el parámetro ``-s``.
+
+Así, para el escenario que hemos venido utilizando quedaría como sigue...
+
+```bash
+eth3rup@debian:~$ docker compose rm -s
+[+] Stopping 2/2
+ ✔ Container miwp  Stopped                                                                                                                 1.5s 
+ ✔ Container midb  Stopped                                                                                                                 0.8s 
+? Going to remove miwp, midb Yes
+[+] Removing 2/0
+✔ Container midb  Removed                                                                                                                  0.0s 
+ ✔ Container miwp  Removed                                                                                                                 0.0s
+```
+Es importante tener en cuenta que la operación ha eliminado sólo los servicios. Las redes y los volúmenes se mantienen, como se puede observar:
+
+```bash
+eth3rup@debian:~$ docker network list
+NETWORK ID     NAME              DRIVER    SCOPE
+5dce7c28d72a   bridge            bridge    local
+ce2870c7e71b   host              host      local
+28bc6c3d411b   eth3rup_lan1      bridge    local
+a4aa408b62eb   mired1            bridge    local
+536110a74fb1   lan1              bridge    local
+d15815d2f0d7   none              null      local
+
+eth3rup@debian:~$ docker volume list
+DRIVER    VOLUME NAME
+local     data
+local     eth3rup_data
+
+eth3rup@debian:~$ docker container list
+CONTAINER ID   IMAGE             COMMAND                  CREATED              STATUS              PORTS                                   NAMES
+```
+
+##### Optimización de las variables de entorno
+
+El uso de las variables de entorno en _Docker Compose_ es muy interesante. Hasta ahora sabemos que podemos definir variables de entorno para nuestros servicios en el archivo ``docker-compose.yml`` usando el campo ``environment``. El ámbito de estas variables será el servicio para el que han sido definidas. Por ejemplo...
+
+```yaml
+    web:
+        image: wordpress:6.3.2
+        container_name: miwp
+        restart: always
+        depends_on:
+            - db
+        volumes:
+            - ./wp:/var/www/html
+        environment:
+            - WORDPRESS_DB_USER=manager
+            - WORDPRESS_DB_PASSWORD=pass.de.manager
+            - WORDPRESS_DB_HOST=db
+        networks:
+            - lan1
+        ports:
+            - 8080:80
+```
+
+En el caso de que no se desee pasar las variables con sus valores en el archivo ``docker-compose.yaml``, es posible derivar la consulta a un archivo externo. Por ejemplo, tendríamos un archivo ``variables-miwp.env`` con las variables...
+
+```bash
+variables-miwp.env
+ WORDPRESS_DB_USER=manager
+ WORDPRESS_DB_PASSWORD=pass.de.manager
+ WORDPRESS_DB_HOST=db
+```
+
+...y después lo referenciaríamos en el ``docker-compose.yml``
+
+```yaml
+    web:
+        image: wordpress:6.3.2
+        container_name: miwp
+        restart: always
+        depends_on:
+            - db
+        volumes:
+            - ./wp:/var/www/html
+        env_file:
+            - variables-miwp.env
+        networks:
+            - lan1
+        ports:
+            - 8080:80
+```
+
+También es posible utilizar variables de entorno de nuestro host. Esto nos va a ayudar mucho a manipular nuestros escenarios, ya que nos permitirá parametrizar partes del archivo ``docker-compose.yml`` para que no sea necesario modificarlo. Para utilizar estas variables se emplea la misma sintaxis que en ``bash``. 
+
+Vamos a ver unos ejemplos:
+ * Utilizamos una variable de entorno del sistema ``PWD``, de forma que ``${PWD}`` estaría devolviendo la ruta del directorio en el que nos encontramos.
+ * Utilizamos una variable que hemos definido nosotros previamente en el sistema llamada ``VERSION``, por lo que ``${VERSION}`` nos devolvería el valor que le hubiéramos dado a esa variable.
+ * Utilizamos un valor por defecto, para cubrir el caso de que la variable no esté definida o su valor sea nulo. De esta manera, ``${VERSION:-6.3.2}`` evaluaría si existe la variable ``VERSION``; si no existe o tiene un valor nulo, se le asignaría el valor ``'6.3.2'`` y en caso contrario se usaría el valor que tuviera definido.
+
+ Aplicados estos ejemplos, podríamos obtener algo como esto:
+
+ ```yaml
+    web:
+        image: wordpress:${VERSION:-6.3.2}
+        container_name: miwp
+        restart: always
+        depends_on:
+            - db
+        volumes:
+            - ${PWD}/wp:/var/www/html
+        env_file:
+            - variables-miwp.env
+        networks:
+            - lan1
+        ports:
+            - 8080:80
+```

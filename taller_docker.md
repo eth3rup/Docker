@@ -48,10 +48,16 @@
      * [Eliminar una red en Docker](#eliminar-una-red-en-docker)
 - [Orquestación de contenedores](#orquestación-de-contenedores)
      * [Docker Compose](#docker-compose)
+        * [El archivo _docker-compose.yml_](#el-archivo-docker-composeyml)
+        * [Los comandos de Docker Compose](#los-comandos-de-docker-compose)
+            * [Levantar el escenario](#levantar-el-escenario)
+            * [Detener el escenario](#detener-el-escenario)
+            * [Iniciar el escenario](#iniciar-el-escenario)
+            * [Actualizar las imágenes del escenario](#actualizar-las-imágenes-del-escenario)
+            * [Reconstruir las imágenes del escenario](#reconstruir-las-imágenes-del-escenario)            
+            * [Eliminar el escenario](#eliminar-el-escenario)
 
 
-        
-     
 Instalación de Docker en Debian
 ===============================================================================================================================
 La instalación de Docker depende del sistema operativo sobre el que estemos trabajando. Además, para algunos sistemas existen diferentes métodos para hacer la instalación.
@@ -1660,6 +1666,10 @@ Sin embargo, vemos que este modelo, si tenemos que construirlo manualmente, impl
 La principal herramienta para la orquestación de contenedores se llama ```Docker Compose```.
 Esta herramienta funciona en todos los entornos y dispone de una nutrida variedad de comandos para gestionar prácticamente la totalidad de escenarios en Docker.
 
+> **⚠ Importante:**
+>
+> Es posible que te encuentres algún entorno en el que se utilice ```docker-compose``` (con un guión) en lugar de  ```docker compose``` (con un espacio). Ambos son ``Docker Compose``. Se diferencian en que el primero es la versión ``v1`` y el segundo la versión ``v2``. La versión ``v1`` está "discontinuada" y ya no recibe actualizaciones, por lo que, si es tu caso, sería recomendable que actualizaras tu versión de Docker, ya que actualmente se incluye la versión ``v2`` en la propia instalación y no es necesario instalarla como un plugin, que era lo que sucedía con la ``v1``.
+
 ##### El archivo docker-compose.yml
 
 La forma de funcionamiento de ```docker compose``` es muy similar a la que tenía ```docker build```. En este caso, la base será un archivo llamado ```docker-compose.yml``` (en formato YAML).
@@ -1867,6 +1877,17 @@ Para no tener que preocuparse por esto, se puede definir en el archivo de config
 
 ```restart: allways```
 
+Si volviésemos a ejecutar la orden ``docker compose up -d`` nos encontraríamos con el siguiente resultado:
+
+```bash
+eth3rup@debian:~$ docker compose up -d
+[+] Running 2/0
+ ✔ Container eth3rup-db-1   Running                                                                                                     0.0s 
+ ✔ Container eth3rup-web-1  Running                                                                                                     0.0s
+```
+
+Como sucedía con _Dockerfile_, la ejecución de ``docker compose up`` sólo produce "cambios" si hubiera alguna modificación sobre los elementos que hemos definido en _docker-compose.yml_.
+
 Otra cuestión importante que vemos a la hora de levantar el escenario es que a los nombres de los contenedores, redes y volúmenes que hemos establecido en el archivo de configuración se **les ha añadido el prefijo del directorio de trabajo** (es decir, nuestro contexto). Esto es así porque cada proyecto tiene su propio espacio de nombres para servicios, volúmenes y redes, lo que evita la colisión de nombres.
 
 Si deseamos forzar a usar un nombre sin que tenga este prefijo, debemos especificarlo en el archivo de configuración. Así, para nuestro ejemplo, quedaría como se muestra a continuación:
@@ -1912,3 +1933,47 @@ volumes:
     data:
         name: data
 ```
+
+###### Detener el escenario
+Si necesitamos detener todos los servicios (contenedores) que forman parte del escenario definido en ``docker-compose.yml`` podemos hacerlo a través del comando ``docker compose stop``, que tiene la siguiente sintaxis:
+
+
+``docker compose stop  [OPCIONES] [SERVICIO]``
+
+Para nuestro caso, sería así...
+
+```bash
+eth3rup@debian:~$ docker compose stop
+[+] Stopping 2/2
+ ✔ Container eth3rup-web-1   Stopped                                                                                                     3.9s 
+ ✔ Container eth3rup-db-1  Stopped                                                                                                     1.9s
+```
+
+Como se aprecia en la sintaxis del comando, también habría sido posible detener servicios de forma selectiva. Esto es especialmente útil cuando el escenario está compuesto por un número considerable de servicios y no queremos detenerlos todos. En este sentido, el comando ``docker compose stop [SERVICIO]`` podría pensarse que es equivalente al comando ``docker container stop [CONTENEDOR]``. Sin embargo, hay un matiz importante, y es que **``docker compose stop [SERVICIO]`` nos garantiza que la parada se hará de forma coherente y ajustada a las configuraciones definidas en el archivo de configuración.** Así, en nuestro caso, puesto que el servicio web depende del servicio de base de datos, los detendrá en orden: primero el servicio web y después el de base de datos. Este orden es el inverso al que se utilizó en la creación; eso es, el inverso al definido en el ``docker-compose.yml``.
+
+**La detención también afecta a los volúmenes y redes** que estén implicados, asegurando que no se eliminen los volúmenes persistentes y que las conexiones de red se limpien y no dejen redes huérfanas. 
+
+###### Iniciar el escenario
+Si necesitamos volver a ejecutar todos los servicios (contenedores) que forman parte del escenario definido en ``docker-compose.yml`` podemos hacerlo a través del comando ``docker compose start``, que tiene la siguiente sintaxis:
+
+
+``docker compose start  [OPCIONES] [SERVICIO]``
+
+Para nuestro caso, sería así...
+
+```bash
+eth3rup@debian:~$ docker compose start
+[+] Stopping 2/2
+ ✔ Container eth3rup-db-1   Started                                                                                                     3.9s 
+ ✔ Container eth3rup-web-1  Started                                                                                                     1.9s
+```
+
+> **👉 A tener en cuenta...**
+>
+> El comando ```docker compose start``` funciona para servicios definidos en el archivo de configuración que han sido previamente parados (ya sea "accidentalmente" o mediante la orden  ```docker compose stop```). Es decir, los contenedores deben existir. De no ser así, la orden a utilizar debería ser ``docker compose up``.
+
+Al igual que comentamos en el apartado anterior, podría pensarse en una equivalencia entre los comandos ``docker compose start [SERVICIO]`` y ``docker container start [CONTENEDOR]``. Sin embargo, el uso de **``docker compose start [SERVICIO]`` nos garantiza que el arranque se hará de forma coherente y ajustada a las configuraciones definidas en el archivo de configuración.**
+
+###### Actualizar las imágenes del escenario 
+###### Reconstruir las imágenes del escenario   
+###### Eliminar el escenario 

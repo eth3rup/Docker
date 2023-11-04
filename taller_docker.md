@@ -261,7 +261,7 @@ La arquitectura de Docker está sustentada en tres elementos:
 
 De forma visual, la relación de estos elementos se muestra en la siguiente imagen:
 
-[![img05-dockerhub.png](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*09i6gCc0tBhSsXToKA7Cnw.png)](Arquitectura_de_Docker)
+![img05-dockerhub.png](https://miro.medium.com/v2/resize:fit:1100/format:webp/1*09i6gCc0tBhSsXToKA7Cnw.png)
  
 
 #### Información sobre Docker
@@ -1823,22 +1823,8 @@ eth3rup@debian:~$ docker compose up -d
 [+] Running 4/4
  ✔ Network eth3rup_lan1     Created                                     1.1s 
  ✔ Volume "eth3rup_data"    Created                                     0.1s 
- ✔ Container eth3rup-db-1   Created                                     1.4s 
- ✔ Container eth3rup-web-1  Created                                     0.1s 
-Attaching to eth3rup-db-1, eth3rup-web-1
-eth3rup-db-1   | 2023-11-03 16:51:56+00:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:11.0.3+maria~ubu2204 started.
-eth3rup-db-1   | 2023-11-03 16:51:57+00:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
-eth3rup-web-1  | WordPress not found in /var/www/html - copying now...
-eth3rup-db-1   | 2023-11-03 16:51:57+00:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:11.0.3+maria~ubu2204 started.
-eth3rup-db-1   | 2023-11-03 16:51:58+00:00 [Note] [Entrypoint]: Initializing database files
-eth3rup-web-1  | Complete! WordPress has been successfully copied to /var/www/html
-eth3rup-web-1  | No 'wp-config.php' found in /var/www/html, but 'WORDPRESS_...' variables supplied; copying 'wp-config-docker.php' (WORDPRESS_DB_HOST WORDPRESS_DB_PASSWORD WORDPRESS_DB_USER)
-eth3rup-web-1  | AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.19.0.3. Set the 'ServerName' directive globally to suppress this message
-eth3rup-web-1  | AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 172.19.0.3. Set the 'ServerName' directive globally to suppress this message
-eth3rup-web-1  | [Fri Nov 03 16:52:01.786372 2023] [mpm_prefork:notice] [pid 1] AH00163: Apache/2.4.56 (Debian) PHP/8.0.30 configured -- resuming normal operations
-eth3rup-web-1  | [Fri Nov 03 16:52:01.786797 2023] [core:notice] [pid 1] AH00094: Command line: 'apache2 -D FOREGROUND'
-eth3rup-db-1   | 
-...
+ ✔ Container eth3rup-db-1   Started                                     1.4s 
+ ✔ Container eth3rup-web-1  Started                                     0.1s 
 ```
 Una vez finalizado el despliegue, podemos comprobar que todos los objetos definidos en nuestro docker-compose.yml han sido creados y los contenedores están en ejecución:
 

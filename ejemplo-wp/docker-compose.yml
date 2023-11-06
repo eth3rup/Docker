@@ -1,0 +1,33 @@
+version: '3.1'
+
+services:
+    db:
+        image: mariadb:11.0
+        volumes:
+            - data:/var/lib/mysql
+        environment:
+            - MYSQL_ROOT_PASSWORD=pass.de.root
+            - MYSQL_DATABASE=wordpress
+            - MYSQL_USER=manager
+            - MYSQL_PASSWORD=pass.de.manager
+        networks:
+            - lan1
+    web:
+        image: wordpress:6.3.2
+        depends_on:
+            - db
+        volumes:
+            - ./wp:/var/www/html
+        environment:
+            - WORDPRESS_DB_USER=manager
+            - WORDPRESS_DB_PASSWORD=pass.de.manager
+            - WORDPRESS_DB_HOST=db
+        networks:
+            - lan1
+        ports:
+            - 8080:80
+networks:
+    lan1:
+        driver: bridge
+volumes:
+    data:
